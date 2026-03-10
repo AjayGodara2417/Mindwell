@@ -1,6 +1,7 @@
 "use client";
 
 import { Phone, MessageSquare, Heart, Moon, Zap, Smile } from "lucide-react";
+import Image from "next/image";
 
 export default function ResourcesPage() {
   const categories = [
@@ -139,7 +140,7 @@ export default function ResourcesPage() {
               key={i}
               className="flex items-center gap-5 bg-[#101d35] border border-[#1b2a41] p-4 rounded-xl"
             >
-              <img
+              <Image
                 src={article.img}
                 alt=""
                 className="w-24 h-16 object-cover rounded-lg"

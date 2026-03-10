@@ -32,30 +32,37 @@ const questions = [
   { id: 25, question: "I feel like life is not worth living." },
 ];
 
-const options = ["Never", "Sometimes", "Often", "Always"];
+const options = [
+  { label: "Never", value: 0 },
+  { label: "Sometimes", value: 1 },
+  { label: "Often", value: 2 },
+  { label: "Always", value: 3 },
+];
 
 export default function DashboardPage() {
   const router = useRouter();
 
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<(string | null)[]>(
+  const [answers, setAnswers] = useState(
     Array(questions.length).fill(null)
   );
 
-  const selectAnswer = (option: string) => {
+  const selectAnswer = (value: unknown) => {
     const updated = [...answers];
-    updated[current] = option;
+    updated[current] = value;
     setAnswers(updated);
   };
 
   const nextQuestion = () => {
-    if (!answers[current]) return;
+    if (answers[current] === null) return;
 
     if (current < questions.length - 1) {
       setCurrent(current + 1);
     } else {
-      // submit and go to result page
-      router.push("/result-dashboard");
+
+      const totalScore = answers.reduce((a, b) => a + b, 0);
+
+      router.push(`/result-dashboard?score=${totalScore}`);
     }
   };
 
@@ -68,13 +75,11 @@ export default function DashboardPage() {
   return (
     <div className="w-130 bg-[#0f2438] border border-white/10 rounded-2xl p-8 shadow-xl">
 
-      {/* Header */}
       <div className="flex justify-between text-xs text-gray-400 mb-2">
         <span>QUESTION {current + 1} OF 25</span>
         <span>{progress}% Completed</span>
       </div>
 
-      {/* Progress Bar */}
       <div className="w-full h-1 bg-white/10 rounded mb-6">
         <div
           className="h-1 bg-blue-500 rounded"
@@ -82,24 +87,18 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Question */}
-      <h2 className="text-2xl font-semibold mb-2">
+      <h2 className="text-2xl font-semibold mb-6">
         {questions[current].question}
       </h2>
 
-      <p className="text-sm text-gray-400 mb-6">
-        Select the option that best describes your feelings over the past two weeks.
-      </p>
-
-      {/* Options */}
       <div className="space-y-4 mb-8">
         {options.map((option) => {
-          const selected = answers[current] === option;
+          const selected = answers[current] === option.value;
 
           return (
             <button
-              key={option}
-              onClick={() => selectAnswer(option)}
+              key={option.label}
+              onClick={() => selectAnswer(option.value)}
               className={`w-full flex justify-between items-center p-4 rounded-lg border transition
               ${
                 selected
@@ -107,7 +106,7 @@ export default function DashboardPage() {
                   : "border-white/10 hover:border-blue-400"
               }`}
             >
-              {option}
+              {option.label}
 
               <div
                 className={`w-5 h-5 rounded-full border ${
@@ -119,8 +118,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Navigation */}
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between">
 
         <button
           onClick={prevQuestion}
@@ -133,21 +131,14 @@ export default function DashboardPage() {
 
         <button
           onClick={nextQuestion}
-          disabled={!answers[current]}
+          disabled={answers[current] === null}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg disabled:opacity-40"
         >
-          {current === questions.length - 1 ? "Submit" : "Next Question"}
+          {current === questions.length - 1 ? "Submit" : "Next"}
           <ArrowRight size={16} />
         </button>
 
       </div>
-
-      {/* Footer */}
-      <p className="text-xs text-gray-500 text-center mt-6">
-        Your answers are confidential and used to provide personalized mental
-        health insights.
-      </p>
-
     </div>
   );
 }
