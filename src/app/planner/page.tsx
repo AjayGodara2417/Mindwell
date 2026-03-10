@@ -96,7 +96,7 @@ export default function PlannerPage() {
 
           {/* Progress Mini-Card */}
           {totalCount > 0 && (
-            <div className="bg-[#16243e] p-4 rounded-2xl border border-white/5 min-w-[200px]">
+            <div className="bg-[#16243e] p-4 rounded-2xl border border-white/5 min-w-50">
               <div className="flex justify-between text-sm mb-2 text-gray-400">
                 <span>Progress</span>
                 <span>{Math.round(progressPercent)}%</span>
@@ -192,7 +192,7 @@ export default function PlannerPage() {
                 <Trophy className="text-gray-700" size={40} />
             </div>
             <h3 className="text-xl font-semibold text-gray-300">Clean Slate!</h3>
-            <p className="text-gray-500 mt-2 max-w-[250px]">
+            <p className="text-gray-500 mt-2 max-w-62.5">
               Your {activeTab} list is empty. Add a task to get things moving.
             </p>
           </div>
