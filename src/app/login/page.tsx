@@ -4,15 +4,37 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 export default function Login() {
-  const [role, setRole] = useState("patient");
+  const [role, setRole] = useState<"patient" | "doctor">("patient");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
   const router = useRouter();
 
-  const handleLogin = (e: unknown) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // later you will add authentication here
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
 
-    router.push("/dashboard");
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(data.message);
+      return;
+    }
+
+    localStorage.setItem("token", data.token);
+
+    if (data.role === "doctor") {
+      router.push("/doctor-dashboard");
+    } else {
+      router.push("/dashboard");
+    }
   };
 
   return (
@@ -28,9 +50,9 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setRole("patient")}
-            className={`py-2 rounded-lg text-sm font-medium ${
+            className={`py-2 rounded-lg text-sm ${
               role === "patient"
-                ? "bg-blue-600 text-white shadow"
+                ? "bg-blue-600 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -40,9 +62,9 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setRole("doctor")}
-            className={`py-2 rounded-lg text-sm font-medium ${
+            className={`py-2 rounded-lg text-sm ${
               role === "doctor"
-                ? "bg-blue-600 text-white shadow"
+                ? "bg-blue-600 text-white"
                 : "text-gray-600"
             }`}
           >
@@ -53,32 +75,30 @@ export default function Login() {
         <form onSubmit={handleLogin} className="space-y-4">
 
           <div>
-            <label className="text-sm font-medium text-gray-700">
-              Email
-            </label>
+            <label className="text-sm text-gray-700">Email</label>
             <input
               type="email"
               required
-              className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full mt-1 border rounded-lg px-3 py-2"
             />
           </div>
 
-          {role === "doctor" && (
-            <div>
-              <label className="text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <input
-                type="password"
-                required
-                className="w-full mt-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 outline-none"
-              />
-            </div>
-          )}
+          <div>
+            <label className="text-sm text-gray-700">Password</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full mt-1 border rounded-lg px-3 py-2"
+            />
+          </div>
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-lg font-medium transition"
+            className="w-full bg-blue-600 text-white py-2.5 rounded-lg"
           >
             Login
           </button>
@@ -87,7 +107,7 @@ export default function Login() {
 
         <p className="text-sm text-center mt-6 text-gray-600">
           Dont have an account?{" "}
-          <a href="/signup" className="text-blue-600 font-medium">
+          <a href="/signup" className="text-blue-600">
             Sign up
           </a>
         </p>

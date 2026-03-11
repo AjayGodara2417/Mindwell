@@ -14,18 +14,18 @@ export default function Hero() {
           </h1>
 
           <p className="mt-6 text-lg text-gray-600 max-w-xl">
-            Empowering patients to manage their mental health and clinicians
+            Empowering patients to manage their mental health and doctors
             to provide better care with data-driven insights.
           </p>
 
           {/* Buttons */}
           <div className="mt-8 flex flex-wrap gap-4">
             <button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-blue-700 transition">
-              Get Started as a Patient
+              Join as Patient
             </button>
 
             <button className="bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-semibold hover:bg-gray-300 transition">
-              Join as a Clinician
+              Join as a Doctor
             </button>
           </div>
         </div>
