@@ -84,7 +84,7 @@ export default function ResourcesPage() {
         </div>
 
         {/* Emergency Support - High Contrast UX */}
-        <section className="relative overflow-hidden bg-gradient-to-br from-[#1a2b4b] to-[#101d35] border border-red-500/30 rounded-3xl p-8 mb-16 shadow-2xl">
+        <section className="relative overflow-hidden bg-linear-to-br from-[#1a2b4b] to-[#101d35] border border-red-500/30 rounded-3xl p-8 mb-16 shadow-2xl">
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <ShieldAlert size={120} />
           </div>

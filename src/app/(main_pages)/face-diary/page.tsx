@@ -195,22 +195,28 @@ export default function FaceDiary() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-12 px-6">
-      <header className="text-center mb-10">
-        <h1 className="text-3xl font-bold text-white flex justify-center gap-3 items-center">
-          <Video className="text-blue-500" />
-          Face Diary
-        </h1>
-        <p className="text-gray-400 mt-2">
-          Record a 30 second video to analyze emotional state
-        </p>
-      </header>
+  <div className="max-w-4xl mx-auto space-y-8">
 
-      <div className="relative aspect-video rounded-xl overflow-hidden bg-black border border-white/10">
+    {/* Header */}
+    <div>
+      <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+        <Video className="text-blue-500"/>
+        Face Diary
+      </h1>
+      <p className="text-gray-400 mt-1">
+        Record a 30 second video to analyze your emotional state
+      </p>
+    </div>
+
+    {/* Camera Card */}
+    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+
+      <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+
         {analyzing && (
           <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
-            <Loader2 className="animate-spin w-10 h-10 text-blue-500 mb-3" />
-            <p className="text-white">Analyzing facial expressions...</p>
+            <Loader2 className="animate-spin w-10 h-10 text-blue-500 mb-3"/>
+            <p className="text-white">Analyzing emotions...</p>
           </div>
         )}
 
@@ -221,48 +227,87 @@ export default function FaceDiary() {
           className="absolute inset-0 w-full h-full object-cover"
         />
 
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" />
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full"
+        />
 
         {capturing && (
-          <div className="absolute top-4 right-4 bg-red-500 text-white px-3 py-1 rounded-full z-10">
+          <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
             00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
           </div>
         )}
       </div>
 
-      {!analysisResult && !analyzing && (
-        <div className="flex justify-center mt-8">
-          {capturing ? (
-            <button
-              onClick={handleStopCapture}
-              className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 transition"
-            >
-              <StopCircle className="text-white" />
-            </button>
-          ) : (
-            <button
-              disabled={!faceDetected || loadingModels}
-              onClick={handleStartCapture}
-              className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 transition disabled:opacity-40"
-            >
-              <div className="w-6 h-6 bg-red-500 rounded-full" />
-            </button>
-          )}
-        </div>
-      )}
+      {/* Face Status */}
+      <div className="flex justify-between items-center mt-4 text-sm">
+        <span className="text-gray-400">
+          {loadingModels
+            ? "Loading AI models..."
+            : faceDetected
+            ? "Face detected"
+            : "No face detected"}
+        </span>
 
-      {analysisResult && (
-        <div className="mt-10 bg-white/5 p-6 rounded-xl border border-white/10">
-          <h2 className="text-xl font-bold text-white mb-4">Analysis Result</h2>
-          <p className="text-gray-300 mb-4">{analysisResult.summary}</p>
-          {analysisResult.emotion && (
-             <p className="text-blue-400 mb-4 text-sm font-mono">Dominant: {analysisResult.emotion}</p>
-          )}
-          <button onClick={reset} className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-            Record Again
-          </button>
-        </div>
-      )}
+        <span
+          className={`px-2 py-1 rounded text-xs ${
+            faceDetected ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+          }`}
+        >
+          {faceDetected ? "Ready" : "Align face"}
+        </span>
+      </div>
     </div>
-  )
+
+    {/* Record Button */}
+    {!analysisResult && !analyzing && (
+      <div className="flex justify-center">
+
+        {capturing ? (
+          <button
+            onClick={handleStopCapture}
+            className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 transition"
+          >
+            <StopCircle />
+          </button>
+        ) : (
+          <button
+            disabled={!faceDetected || loadingModels}
+            onClick={handleStartCapture}
+            className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 transition disabled:opacity-40"
+          >
+            <div className="w-6 h-6 bg-red-500 rounded-full"/>
+          </button>
+        )}
+      </div>
+    )}
+
+    {/* Analysis Result */}
+    {analysisResult && (
+      <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+
+        <h2 className="text-xl font-semibold text-white mb-3">
+          Emotion Analysis
+        </h2>
+
+        <p className="text-gray-300 mb-4">
+          {analysisResult.summary}
+        </p>
+
+        {analysisResult.emotion && (
+          <p className="text-blue-400 mb-4">
+            Dominant Emotion: {analysisResult.emotion}
+          </p>
+        )}
+
+        <button
+          onClick={reset}
+          className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg"
+        >
+          Record Again
+        </button>
+      </div>
+    )}
+  </div>
+)
 }
