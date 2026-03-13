@@ -15,20 +15,29 @@ type TasksState = {
 };
 
 export default function PlannerPage() {
-  const [tasks, setTasks] = useState<TasksState>({
-    daily: [],
-    weekly: [],
-    monthly: [],
+  const [tasks, setTasks] = useState<TasksState>(() => {
+    const saved = localStorage.getItem("planner-tasks");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        // fallback to default if parsing fails
+        return {
+          daily: [],
+          weekly: [],
+          monthly: [],
+        };
+      }
+    }
+    return {
+      daily: [],
+      weekly: [],
+      monthly: [],
+    };
   });
 
   const [activeTab, setActiveTab] = useState<keyof TasksState>("daily");
   const [taskInput, setTaskInput] = useState("");
-
-  // Load from LocalStorage on Mount
-  useEffect(() => {
-    const saved = localStorage.getItem("planner-tasks");
-    if (saved) setTasks(JSON.parse(saved));
-  }, []);
 
   // Save to LocalStorage whenever tasks change
   useEffect(() => {
