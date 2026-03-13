@@ -9,10 +9,8 @@ import {
   Smile,
   BookOpen,
   ChevronRight,
-  ExternalLink,
   ShieldAlert,
 } from "lucide-react";
-import Image from "next/image";
 
 export default function ResourcesPage() {
 

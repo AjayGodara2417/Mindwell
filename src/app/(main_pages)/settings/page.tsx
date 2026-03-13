@@ -11,7 +11,7 @@ export default function Settings() {
     report: false,
   });
 
-  const toggle = (key: string) => {
+  const toggle = (key: keyof typeof notifications) => {
     setNotifications((prev) => ({
       ...prev,
       [key]: !prev[key],
@@ -106,7 +106,13 @@ export default function Settings() {
   );
 }
 
-function Toggle({ title, enabled, onToggle }: any) {
+interface ToggleProps {
+  title: string;
+  enabled: boolean;
+  onToggle: () => void;
+}
+
+function Toggle({ title, enabled, onToggle }: ToggleProps) {
   return (
     <div className="flex justify-between items-center">
       <p>{title}</p>

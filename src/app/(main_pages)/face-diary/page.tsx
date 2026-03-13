@@ -15,7 +15,13 @@ export default function FaceDiary() {
 
   const [capturing, setCapturing] = useState(false)
   const [analyzing, setAnalyzing] = useState(false)
-  const [analysisResult, setAnalysisResult] = useState<any>(null)
+  type AnalysisResult = {
+    emotion?: string
+    confidence?: number
+    summary?: string
+    keyPoints?: string[]
+  }
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null)
   const [timeLeft, setTimeLeft] = useState(30)
   const [loadingModels, setLoadingModels] = useState(true)
   const [faceDetected, setFaceDetected] = useState(false)

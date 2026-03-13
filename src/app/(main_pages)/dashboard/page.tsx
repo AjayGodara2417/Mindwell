@@ -64,11 +64,11 @@ export default function DashboardPage() {
       } else {
 
         const totalScore = updated.reduce(
-          (sum, val) => sum + (val ?? 0),
+          (sum: number, val) => (sum ?? 0) + (val ?? 0),
           0
         );
 
-        const percentage = Math.round((totalScore / 75) * 100);
+        const percentage = Math.round(((totalScore ?? 0) / 75) * 100);
 
         const email = localStorage.getItem("userEmail");
 
