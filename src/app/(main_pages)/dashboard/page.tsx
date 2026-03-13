@@ -42,25 +42,49 @@ const options = [
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState(
+  const [current, setCurrent] = useState<number>(0);
+
+  const [answers, setAnswers] = useState<(number | null)[]>(
     Array(questions.length).fill(null)
   );
 
-  const selectAnswer = (value: unknown) => {
+  const selectAnswer = (value: number) => {
     const updated = [...answers];
     updated[current] = value;
     setAnswers(updated);
   };
 
-  const nextQuestion = () => {
+  const nextQuestion = async () => {
     if (answers[current] === null) return;
 
     if (current < questions.length - 1) {
       setCurrent(current + 1);
     } else {
 
-      const totalScore = answers.reduce((a, b) => a + b, 0);
+      const totalScore = answers.reduce(
+        (sum, value) => sum + (value ?? 0),
+        0
+      );
+
+      const percentage = Math.round((totalScore / 75) * 100);
+
+      const email = localStorage.getItem("userEmail");
+
+      try {
+        await fetch("/api/assessment", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            score: totalScore,
+            percentage,
+          }),
+        });
+      } catch (error) {
+        console.error("Error saving result:", error);
+      }
 
       router.push(`/result-dashboard?score=${totalScore}`);
     }
@@ -70,73 +94,87 @@ export default function DashboardPage() {
     if (current > 0) setCurrent(current - 1);
   };
 
-  const progress = Math.round(((current + 1) / questions.length) * 100);
+  const progress = Math.round(
+    ((current + 1) / questions.length) * 100
+  );
 
   return (
-    <div className="w-130 bg-[#0f2438] border border-white/10 rounded-2xl p-8 shadow-xl">
+    <div className="flex items-center justify-center min-h-screen bg-[#071421] text-white">
 
-      <div className="flex justify-between text-xs text-gray-400 mb-2">
-        <span>QUESTION {current + 1} OF 25</span>
-        <span>{progress}% Completed</span>
-      </div>
+      <div className="w-[520px] bg-[#0f2438] border border-white/10 rounded-2xl p-8 shadow-xl">
 
-      <div className="w-full h-1 bg-white/10 rounded mb-6">
-        <div
-          className="h-1 bg-blue-500 rounded"
-          style={{ width: `${progress}%` }}
-        />
-      </div>
+        <div className="flex justify-between text-xs text-gray-400 mb-2">
+          <span>
+            QUESTION {current + 1} OF {questions.length}
+          </span>
+          <span>{progress}% Completed</span>
+        </div>
 
-      <h2 className="text-2xl font-semibold mb-6">
-        {questions[current].question}
-      </h2>
+        <div className="w-full h-1 bg-white/10 rounded mb-6">
+          <div
+            className="h-1 bg-blue-500 rounded"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-      <div className="space-y-4 mb-8">
-        {options.map((option) => {
-          const selected = answers[current] === option.value;
+        <h2 className="text-2xl font-semibold mb-6">
+          {questions[current].question}
+        </h2>
 
-          return (
-            <button
-              key={option.label}
-              onClick={() => selectAnswer(option.value)}
-              className={`w-full flex justify-between items-center p-4 rounded-lg border transition
-              ${
-                selected
-                  ? "border-blue-500 bg-blue-500/10"
-                  : "border-white/10 hover:border-blue-400"
-              }`}
-            >
-              {option.label}
+        <div className="space-y-4 mb-8">
+          {options.map((option) => {
 
-              <div
-                className={`w-5 h-5 rounded-full border ${
-                  selected ? "border-blue-500 bg-blue-500" : "border-white/20"
+            const selected = answers[current] === option.value;
+
+            return (
+              <button
+                key={option.label}
+                onClick={() => selectAnswer(option.value)}
+                className={`w-full flex justify-between items-center p-4 rounded-lg border transition
+                ${
+                  selected
+                    ? "border-blue-500 bg-blue-500/10"
+                    : "border-white/10 hover:border-blue-400"
                 }`}
-              />
-            </button>
-          );
-        })}
-      </div>
+              >
 
-      <div className="flex justify-between">
+                {option.label}
 
-        <button
-          onClick={prevQuestion}
-          disabled={current === 0}
-          className="flex items-center gap-2 text-gray-400 hover:text-white disabled:opacity-30"
-        >
-          <ArrowLeft size={16} />
-          Previous
-        </button>
+                <div
+                  className={`w-5 h-5 rounded-full border
+                  ${
+                    selected
+                      ? "border-blue-500 bg-blue-500"
+                      : "border-white/20"
+                  }`}
+                />
 
-        <button
-          onClick={nextQuestion}
-          disabled={answers[current] === null}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg disabled:opacity-40"
-        >
-          {current === questions.length - 1 ? "Submit" : "Next"}
-          <ArrowRight size={16} />
-        </button>
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex justify-between">
+
+          <button
+            onClick={prevQuestion}
+            disabled={current === 0}
+            className="flex items-center gap-2 text-gray-400 hover:text-white disabled:opacity-30"
+          >
+            <ArrowLeft size={16} />
+            Previous
+          </button>
+
+          <button
+            onClick={nextQuestion}
+            disabled={answers[current] === null}
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg disabled:opacity-40"
+          >
+            {current === questions.length - 1 ? "Submit" : "Next"}
+            <ArrowRight size={16} />
+          </button>
+
+        </div>
 
       </div>
     </div>
