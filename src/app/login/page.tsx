@@ -29,6 +29,9 @@ export default function Login() {
     }
 
     localStorage.setItem("token", data.token);
+    localStorage.setItem("userEmail", data.email);
+    localStorage.setItem("userName", data.name);
+    localStorage.setItem("userRole", data.role);
 
     if (data.role === "doctor") {
       router.push("/doctor-dashboard");
@@ -50,11 +53,10 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setRole("patient")}
-            className={`py-2 rounded-lg text-sm ${
-              role === "patient"
+            className={`py-2 rounded-lg text-sm ${role === "patient"
                 ? "bg-blue-600 text-white"
                 : "text-gray-600"
-            }`}
+              }`}
           >
             Patient
           </button>
@@ -62,11 +64,10 @@ export default function Login() {
           <button
             type="button"
             onClick={() => setRole("doctor")}
-            className={`py-2 rounded-lg text-sm ${
-              role === "doctor"
+            className={`py-2 rounded-lg text-sm ${role === "doctor"
                 ? "bg-blue-600 text-white"
                 : "text-gray-600"
-            }`}
+              }`}
           >
             Doctor
           </button>

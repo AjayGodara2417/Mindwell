@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function Signup() {
+  const router = useRouter();
+
   const [role, setRole] = useState<"patient" | "doctor">("patient");
 
   const [form, setForm] = useState({
@@ -34,30 +37,43 @@ export default function Signup() {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (form.password !== form.confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
+  if (form.password !== form.confirmPassword) {
+    alert("Passwords do not match");
+    return;
+  }
 
-    const res = await fetch("/api/signup", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ role, ...form }),
-    });
+  const res = await fetch("/api/signup", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role, ...form }),
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.message);
-      return;
-    }
+  if (!res.ok) {
+    alert(data.message);
+    return;
+  }
 
-    alert("Account created successfully");
-  };
+  // Save user data
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userName", data.name);
+  localStorage.setItem("userEmail", data.email);
+  localStorage.setItem("userRole", data.role);
+
+  alert("Account created successfully");
+
+  // Redirect based on role
+  if (data.role === "doctor") {
+    router.push("/doctor-dashboard");
+  } else {
+    router.push("/dashboard");
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

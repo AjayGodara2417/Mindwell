@@ -4,7 +4,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { LoginRequest } from "@/types/user";
 
-const SECRET = "SUPER_SECRET_KEY";
+const SECRET = process.env.JWT_SECRET as string;
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
 
     const { email, password } = body;
 
-    // check doctor
+    // -------- Check Doctor --------
     const [doctorRows]: any = await db.query(
       "SELECT * FROM doctors WHERE email=?",
       [email]
@@ -38,10 +38,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         role: "doctor",
         token,
+        name: doctor.name,
+        email: doctor.email,
       });
     }
 
-    // check patient
+    // -------- Check Patient --------
     const [patientRows]: any = await db.query(
       "SELECT * FROM patients WHERE email=?",
       [email]
@@ -67,6 +69,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         role: "patient",
         token,
+        name: patient.name,
+        email: patient.email,
       });
     }
 
