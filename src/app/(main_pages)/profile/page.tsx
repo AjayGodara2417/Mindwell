@@ -1,170 +1,283 @@
 "use client";
 
-import { useState } from "react";
-import { 
-  User, 
-  MapPin, 
-  Calendar, 
-  TrendingUp, 
-  CheckCircle2, 
-  Video, 
-  Edit3,
-  Award,
-  ArrowUpRight
-} from "lucide-react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
+import {
+  MapPin,
+  Calendar,
+  TrendingUp,
+  CheckCircle2,
+  Video,
+  Award,
+} from "lucide-react";
 
 export default function ProfilePage() {
-  // Mock data - in a real app, this comes from your database
-  const user = {
-    name: "John Doe",
-    email: "john.doe@example.com",
-    avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80",
-    joinDate: "Member since Jan 2024",
-    location: "New York, USA",
-    bio: "Focusing on mindfulness and consistent productivity. Recovering coffee addict.",
+
+  type User = {
+    full_name?: string;
+    email?: string;
+    // Add other fields as needed
   };
 
-  const stats = [
-    { label: "Mood Checks", value: "24", icon: Video, color: "text-blue-400" },
-    { label: "Tasks Done", value: "142", icon: CheckCircle2, color: "text-green-400" },
-    { label: "Streak", value: "12 Days", icon: Award, color: "text-purple-400" },
-  ];
+  type Assessment = {
+    score: number;
+    severity: string;
+    percentage: number;
+    created_at: string;
+    // Add other fields as needed
+  };
 
-  const recentMoods = [
-    { day: "Mon", score: 8, level: "Minimal" },
-    { day: "Tue", score: 15, level: "Mild" },
-    { day: "Wed", score: 5, level: "Minimal" },
-    { day: "Thu", score: 12, level: "Mild" },
-    { day: "Fri", score: 7, level: "Minimal" },
+  const [user, setUser] = useState<User | null>(null);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+
+    const fetchData = async () => {
+
+      try {
+
+        const token = localStorage.getItem("token");
+
+        /* -------- Fetch User Profile -------- */
+
+        const profileRes = await fetch("/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const profileData = await profileRes.json();
+
+        setUser(profileData);
+
+        /* -------- Fetch Assessment History -------- */
+
+        const res = await fetch(
+          `/api/assessment?email=${profileData.email}`
+        );
+
+        const assessmentData = await res.json();
+
+        if (assessmentData.success) {
+          setAssessments(assessmentData.history);
+        }
+
+      } catch (error) {
+        console.error("Profile load error:", error);
+      }
+
+      setLoading(false);
+    };
+
+    fetchData();
+
+  }, []);
+
+  /* -------- Loading State -------- */
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[60vh] text-gray-500">
+        Loading profile...
+      </div>
+    );
+  }
+
+  /* -------- Dashboard Stats -------- */
+
+  const stats = [
+    {
+      label: "Mood Checks",
+      value: assessments.length,
+      icon: Video,
+    },
+    {
+      label: "Tasks Done",
+      value: 42,
+      icon: CheckCircle2,
+    },
+    {
+      label: "Streak",
+      value: "7 Days",
+      icon: Award,
+    },
   ];
 
   return (
-    <div className="min-h-screen bg-[#0b1623] text-white pb-20">
-      {/* Cover Backdrop */}
-      <div className="h-48 w-full bg-gradient-to-r from-blue-900 to-purple-900 opacity-50" />
+    <div className="max-w-5xl mx-auto space-y-8">
 
-      <div className="max-w-5xl mx-auto px-6">
-        <div className="relative -mt-16 flex flex-col md:flex-row items-start md:items-end gap-6 mb-12">
-          {/* Avatar */}
-          <div className="relative h-32 w-32 rounded-3xl overflow-hidden border-4 border-[#0b1623] shadow-2xl">
-            <Image 
-              src={user.avatar} 
-              alt="Profile" 
-              fill 
-              className="object-cover"
-            />
-          </div>
+      {/* -------- Profile Header -------- */}
 
-          <div className="flex-1">
-            <div className="flex items-center gap-3">
-              <h1 className="text-3xl font-bold">{user.name}</h1>
-              <button className="p-1.5 bg-white/5 rounded-full hover:bg-white/10 transition">
-                <Edit3 size={16} className="text-gray-400" />
-              </button>
-            </div>
-            <div className="flex flex-wrap gap-4 mt-2 text-gray-400 text-sm">
-              <span className="flex items-center gap-1"><MapPin size={14}/> {user.location}</span>
-              <span className="flex items-center gap-1"><Calendar size={14}/> {user.joinDate}</span>
-            </div>
-          </div>
+      <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
 
-          <button className="bg-blue-600 hover:bg-blue-500 px-6 py-2.5 rounded-xl font-bold transition shadow-lg shadow-blue-900/20 active:scale-95">
-            Share Profile
-          </button>
+        <div className="w-20 h-20 relative rounded-full overflow-hidden bg-gray-200">
+          <Image
+            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
+            alt="avatar"
+            fill
+            className="object-cover"
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Left Column: Bio & Stats */}
-          <div className="lg:col-span-1 space-y-8">
-            <section className="bg-white/5 border border-white/10 rounded-3xl p-6">
-              <h2 className="text-sm font-bold uppercase tracking-widest text-gray-500 mb-4">About Me</h2>
-              <p className="text-gray-300 leading-relaxed">
-                {user.bio}
-              </p>
-            </section>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900">
+            {user?.full_name || "User"}
+          </h1>
 
-            <div className="grid grid-cols-1 gap-4">
-              {stats.map((stat, i) => (
-                <div key={i} className="bg-[#101d35] border border-white/5 p-5 rounded-2xl flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl bg-white/5 ${stat.color}`}>
-                      <stat.icon size={20} />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-xs text-gray-500 uppercase font-bold">{stat.label}</p>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+          <p className="text-sm text-gray-500">{user?.email}</p>
 
-          {/* Right Column: Mood Charts & Activity */}
-          <div className="lg:col-span-2 space-y-8">
-            
-            {/* Mood Trend Visualization */}
-            <section className="bg-white/5 border border-white/10 rounded-3xl p-8">
-              <div className="flex justify-between items-center mb-8">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-500/20 rounded-lg text-blue-400">
-                    <TrendingUp size={20} />
-                  </div>
-                  <h2 className="text-xl font-bold">Mental Health Trend</h2>
-                </div>
-                <select className="bg-white/5 border border-white/10 rounded-lg text-xs p-2 outline-none">
-                  <option>Last 7 Days</option>
-                  <option>Last 30 Days</option>
-                </select>
-              </div>
+          <div className="flex gap-4 text-sm text-gray-500 mt-1">
 
-              <div className="flex items-end justify-between h-40 gap-2">
-                {recentMoods.map((m, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center gap-3 group">
-                    <div 
-                      className={`w-full rounded-t-lg transition-all duration-500 ${m.score > 10 ? 'bg-blue-500/40' : 'bg-blue-500'}`}
-                      style={{ height: `${(m.score / 20) * 100}%` }}
-                    />
-                    <span className="text-xs font-bold text-gray-500 group-hover:text-white transition-colors">{m.day}</span>
-                  </div>
-                ))}
-              </div>
-              
-            </section>
+            <span className="flex items-center gap-1">
+              <MapPin size={14} /> India
+            </span>
 
-            {/* Recent Activity Log */}
-            <section className="bg-white/5 border border-white/10 rounded-3xl p-8">
-              <h2 className="text-xl font-bold mb-6">Recent Activity</h2>
-              <div className="space-y-6">
-                <div className="flex gap-4">
-                  <div className="mt-1 p-2 bg-green-500/20 rounded-full h-fit">
-                    <CheckCircle2 size={16} className="text-green-400" />
-                  </div>
-                  <div className="flex-1 border-b border-white/5 pb-4">
-                    <p className="text-gray-200">Completed <span className="text-white font-bold">"Daily Meditation"</span> in Weekly Planner</p>
-                    <p className="text-xs text-gray-500 mt-1">2 hours ago</p>
-                  </div>
-                  <ArrowUpRight size={16} className="text-gray-600" />
-                </div>
-
-                <div className="flex gap-4">
-                  <div className="mt-1 p-2 bg-blue-500/20 rounded-full h-fit">
-                    <Video size={16} className="text-blue-400" />
-                  </div>
-                  <div className="flex-1 border-b border-white/5 pb-4">
-                    <p className="text-gray-200">Recorded a <span className="text-white font-bold">Face Diary</span> entry</p>
-                    <p className="text-xs text-gray-500 mt-1">Yesterday, 11:30 PM</p>
-                  </div>
-                  <ArrowUpRight size={16} className="text-gray-600" />
-                </div>
-              </div>
-            </section>
+            <span className="flex items-center gap-1">
+              <Calendar size={14} /> Member
+            </span>
 
           </div>
         </div>
+
       </div>
+
+      {/* -------- About Section -------- */}
+
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="font-semibold mb-2">About</h2>
+        <p className="text-gray-600">
+          Track your mental wellness journey with MindWell. 
+          Monitor stress levels, record emotions through Face Diary,
+          and improve your daily habits.
+        </p>
+      </div>
+
+      {/* -------- Stats -------- */}
+
+      <div className="grid md:grid-cols-3 gap-6">
+
+        {stats.map((stat, i) => (
+          <div
+            key={i}
+            className="bg-white p-6 rounded-xl shadow flex items-center gap-4"
+          >
+
+            <stat.icon className="text-blue-600" />
+
+            <div>
+              <p className="text-xl font-bold">{stat.value}</p>
+              <p className="text-sm text-gray-500">{stat.label}</p>
+            </div>
+
+          </div>
+        ))}
+
+      </div>
+
+      {/* -------- Mental Health Chart -------- */}
+
+      <div className="bg-white p-6 rounded-xl shadow">
+
+        <div className="flex items-center gap-2 mb-6">
+          <TrendingUp className="text-blue-600" />
+          <h2 className="font-semibold">Mental Health Trend</h2>
+        </div>
+
+        {assessments.length === 0 ? (
+
+          <p className="text-gray-500 text-sm">
+            No assessment data available.
+          </p>
+
+        ) : (
+
+          <div className="flex items-end h-40 gap-4">
+
+            {assessments.map((item, i) => {
+
+              const barColor =
+                item.severity === "Very Severe"
+                  ? "bg-red-500"
+                  : item.severity === "Severe"
+                  ? "bg-orange-500"
+                  : item.severity === "Moderate"
+                  ? "bg-yellow-500"
+                  : item.severity === "Mild"
+                  ? "bg-blue-500"
+                  : "bg-green-500";
+
+              return (
+
+                <div
+                  key={i}
+                  className="flex flex-col items-center flex-1"
+                >
+
+                  {/* Score Label */}
+
+                  <p className="text-xs font-semibold text-gray-700">
+                    {item.score}
+                  </p>
+
+                  {/* Bar */}
+
+                  <div
+                    className={`w-full rounded ${barColor}`}
+                    style={{
+                      height: `${item.percentage}%`,
+                    }}
+                  />
+
+                  {/* Date */}
+
+                  <span className="text-xs text-gray-500 mt-1">
+                    {new Date(item.created_at).toLocaleDateString(
+                      "en-US",
+                      {
+                        month: "short",
+                        day: "numeric",
+                      }
+                    )}
+                  </span>
+
+                </div>
+
+              );
+            })}
+
+          </div>
+
+        )}
+
+      </div>
+
+      {/* -------- Severity Legend -------- */}
+
+      <div className="bg-white p-4 rounded-xl shadow text-sm flex gap-6">
+
+        <span className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-green-500 rounded"></div> Minimal
+        </span>
+
+        <span className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-blue-500 rounded"></div> Mild
+        </span>
+
+        <span className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-yellow-500 rounded"></div> Moderate
+        </span>
+
+        <span className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-orange-500 rounded"></div> Severe
+        </span>
+
+        <span className="flex items-center gap-2">
+          <div className="w-3 h-3 bg-red-500 rounded"></div> Very Severe
+        </span>
+
+      </div>
+
     </div>
   );
 }
