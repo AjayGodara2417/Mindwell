@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const questions = [
@@ -40,88 +40,117 @@ const options = [
 ];
 
 export default function DashboardPage() {
+
   const router = useRouter();
 
-  const [current, setCurrent] = useState<number>(0);
+  const [current, setCurrent] = useState(0);
 
   const [answers, setAnswers] = useState<(number | null)[]>(
     Array(questions.length).fill(null)
   );
 
-  const selectAnswer = (value: number) => {
+  const progress = Math.round(((current + 1) / questions.length) * 100);
+
+  const handleAnswer = async (value: number) => {
+
     const updated = [...answers];
     updated[current] = value;
     setAnswers(updated);
-  };
 
-  const nextQuestion = async () => {
-    if (answers[current] === null) return;
+    setTimeout(async () => {
 
-    if (current < questions.length - 1) {
-      setCurrent(current + 1);
-    } else {
+      if (current < questions.length - 1) {
+        setCurrent((prev) => prev + 1);
+      } else {
 
-      const totalScore = answers.reduce(
-        (sum, value) => sum + (value ?? 0),
-        0
-      );
+        const totalScore = updated.reduce(
+          (sum, val) => sum + (val ?? 0),
+          0
+        );
 
-      const percentage = Math.round((totalScore / 75) * 100);
+        const percentage = Math.round((totalScore / 75) * 100);
 
-      const email = localStorage.getItem("userEmail");
+        const email = localStorage.getItem("userEmail");
 
-      try {
-        await fetch("/api/assessment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            score: totalScore,
-            percentage,
-          }),
-        });
-      } catch (error) {
-        console.error("Error saving result:", error);
+        try {
+          await fetch("/api/assessment", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email,
+              score: totalScore,
+              percentage,
+            }),
+          });
+        } catch (error) {
+          console.error(error);
+        }
+
+        router.push(`/result-dashboard?score=${totalScore}`);
       }
 
-      router.push(`/result-dashboard?score=${totalScore}`);
-    }
+    }, 300);
   };
 
   const prevQuestion = () => {
     if (current > 0) setCurrent(current - 1);
   };
 
-  const progress = Math.round(
-    ((current + 1) / questions.length) * 100
-  );
-
   return (
-    <div className="flex items-center justify-center min-h-screen bg-[#071421] text-white">
+    <div className="flex justify-center w-full py-16 px-6 bg-gray-100 min-h-screen">
 
-      <div className="w-[520px] bg-[#0f2438] border border-white/10 rounded-2xl p-8 shadow-xl">
+      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-200 p-10">
 
-        <div className="flex justify-between text-xs text-gray-400 mb-2">
+        {/* Question indicator */}
+        <div className="flex flex-wrap gap-2 mb-6">
+
+          {questions.map((_, index) => {
+
+            const answered = answers[index] !== null;
+
+            return (
+              <div
+                key={index}
+                className={`w-3 h-3 rounded-full
+                ${
+                  index === current
+                    ? "bg-blue-600"
+                    : answered
+                    ? "bg-green-500"
+                    : "bg-gray-300"
+                }`}
+              />
+            );
+          })}
+
+        </div>
+
+        {/* Header */}
+        <div className="flex justify-between text-sm text-gray-500 mb-2">
           <span>
-            QUESTION {current + 1} OF {questions.length}
+            Question {current + 1} of {questions.length}
           </span>
           <span>{progress}% Completed</span>
         </div>
 
-        <div className="w-full h-1 bg-white/10 rounded mb-6">
+        {/* Animated progress */}
+        <div className="w-full h-2 bg-gray-200 rounded mb-8 overflow-hidden">
           <div
-            className="h-1 bg-blue-500 rounded"
+            className="h-2 bg-blue-600 transition-all duration-500 ease-out"
             style={{ width: `${progress}%` }}
           />
         </div>
 
-        <h2 className="text-2xl font-semibold mb-6">
+        {/* Question */}
+        <h2 className="text-2xl font-semibold text-gray-800 mb-8">
           {questions[current].question}
         </h2>
 
-        <div className="space-y-4 mb-8">
+        {/* Options */}
+        <div className="space-y-4 mb-10">
+
           {options.map((option) => {
 
             const selected = answers[current] === option.value;
@@ -129,54 +158,54 @@ export default function DashboardPage() {
             return (
               <button
                 key={option.label}
-                onClick={() => selectAnswer(option.value)}
-                className={`w-full flex justify-between items-center p-4 rounded-lg border transition
+                onClick={() => handleAnswer(option.value)}
+                className={`w-full flex justify-between items-center p-5 rounded-xl border transition
                 ${
                   selected
-                    ? "border-blue-500 bg-blue-500/10"
-                    : "border-white/10 hover:border-blue-400"
+                    ? "border-blue-600 bg-blue-50"
+                    : "border-gray-200 hover:border-blue-400 hover:bg-gray-50"
                 }`}
               >
 
-                {option.label}
+                <span className="text-gray-700 text-lg">
+                  {option.label}
+                </span>
 
                 <div
-                  className={`w-5 h-5 rounded-full border
+                  className={`w-5 h-5 rounded-full border flex items-center justify-center
                   ${
                     selected
-                      ? "border-blue-500 bg-blue-500"
-                      : "border-white/20"
+                      ? "border-blue-600 bg-blue-600"
+                      : "border-gray-300"
                   }`}
                 />
 
               </button>
             );
           })}
+
         </div>
 
+        {/* Navigation */}
         <div className="flex justify-between">
 
           <button
             onClick={prevQuestion}
             disabled={current === 0}
-            className="flex items-center gap-2 text-gray-400 hover:text-white disabled:opacity-30"
+            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
           >
-            <ArrowLeft size={16} />
+            <ArrowLeft size={18} />
             Previous
           </button>
 
-          <button
-            onClick={nextQuestion}
-            disabled={answers[current] === null}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg disabled:opacity-40"
-          >
-            {current === questions.length - 1 ? "Submit" : "Next"}
-            <ArrowRight size={16} />
-          </button>
+          <div className="text-gray-400 text-sm">
+            Select an option to continue
+          </div>
 
         </div>
 
       </div>
+
     </div>
   );
 }
