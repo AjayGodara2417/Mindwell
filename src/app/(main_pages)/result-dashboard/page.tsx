@@ -1,9 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
-export default function ResultDashboard() {
-
+function ResultContent() {
   const params = useSearchParams();
   const router = useRouter();
 
@@ -41,12 +41,10 @@ export default function ResultDashboard() {
 
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg border border-gray-200 p-12 text-center">
 
-        {/* Title */}
         <h1 className="text-3xl font-bold text-gray-800 mb-10">
           Your Mental Health Result
         </h1>
 
-        {/* Score */}
         <div className="text-7xl font-bold text-blue-600 mb-2">
           {score}
         </div>
@@ -55,22 +53,17 @@ export default function ResultDashboard() {
           {percentage}% Mental Stress Level
         </div>
 
-        {/* Stress Meter */}
         <div className="w-full bg-gray-200 h-4 rounded-full mb-6 overflow-hidden">
-
           <div
             className={`h-4 ${bg} transition-all duration-700`}
             style={{ width: `${percentage}%` }}
           />
-
         </div>
 
-        {/* Level */}
         <div className={`text-2xl font-semibold mb-10 ${color}`}>
           {level}
         </div>
 
-        {/* Explanation */}
         <p className="text-gray-500 mb-10 leading-relaxed">
 
           {level === "Minimal" &&
@@ -90,20 +83,24 @@ export default function ResultDashboard() {
 
         </p>
 
-        {/* Buttons */}
         <div className="flex justify-center gap-4">
-
           <button
             onClick={() => router.push("/dashboard")}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg"
           >
             Take Test Again
           </button>
-
         </div>
 
       </div>
-
     </div>
+  );
+}
+
+export default function ResultDashboard() {
+  return (
+    <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
+      <ResultContent />
+    </Suspense>
   );
 }

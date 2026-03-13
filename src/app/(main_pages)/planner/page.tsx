@@ -16,7 +16,10 @@ type TasksState = {
 
 export default function PlannerPage() {
   const [tasks, setTasks] = useState<TasksState>(() => {
-    const saved = localStorage.getItem("planner-tasks");
+    let saved: string | null = null;
+    if (typeof window !== "undefined") {
+      saved = localStorage.getItem("planner-tasks");
+    }
     if (saved) {
       try {
         return JSON.parse(saved);
