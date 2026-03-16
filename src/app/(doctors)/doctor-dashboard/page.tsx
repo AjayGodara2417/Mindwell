@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Users, Search, ArrowRight } from "lucide-react";
 
 type Patient = {
   id: string;
@@ -13,6 +14,8 @@ type Patient = {
 export default function DoctorDashboard() {
   const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -30,74 +33,113 @@ export default function DoctorDashboard() {
       if (data.success) {
         setPatients(data.patients);
       }
+
+      setLoading(false);
     };
 
     fetchPatients();
   }, [router]);
 
-  return (
-    <div className="flex min-h-screen bg-gray-100">
+  const filteredPatients = patients.filter((p) =>
+    p.full_name.toLowerCase().includes(search.toLowerCase())
+  );
 
-      {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-lg hidden md:flex flex-col">
-        <div className="p-6 border-b">
-          <h2 className="text-xl font-bold text-blue-600">MindWell</h2>
-          <p className="text-sm text-gray-500">Doctor Panel</p>
-        </div>
-      </aside>
+  return (
+    <div className="flex min-h-screen bg-gray-50">
 
       {/* Main */}
-      <main className="flex-1 p-6">
 
-        <h1 className="text-2xl font-bold mb-6">
-          Doctor Dashboard
-        </h1>
+      <main className="flex-1 p-8">
 
-        {/* Patients Table */}
+        {/* Header */}
 
-        <div className="bg-white rounded-xl shadow p-6">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">
+            Doctor Dashboard
+          </h1>
+        </div>
 
-          <h2 className="text-lg font-semibold mb-4">
-            Linked Patients
-          </h2>
+        {/* Stats */}
 
-          <table className="w-full text-left">
+        <div className="grid md:grid-cols-3 gap-6 mb-8">
 
-            <thead>
-              <tr className="border-b text-gray-500 text-sm">
-                <th className="py-2">Name</th>
-                <th>Email</th>
-                <th>Symptoms</th>
-              </tr>
-            </thead>
+          <div className="bg-white p-6 rounded-xl shadow-sm flex items-center gap-4">
+            <Users className="text-blue-600" size={32} />
+            <div>
+              <p className="text-gray-500 text-sm">Total Patients</p>
+              <h3 className="text-2xl font-bold">{patients.length}</h3>
+            </div>
+          </div>
 
-            <tbody>
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-500 text-sm">Platform Status</p>
+            <h3 className="text-lg font-semibold text-green-600">
+              Active
+            </h3>
+          </div>
 
-              {patients.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="py-4 text-gray-500">
-                    No patients linked yet
-                  </td>
-                </tr>
-              )}
+          <div className="bg-white p-6 rounded-xl shadow-sm">
+            <p className="text-gray-500 text-sm">Last Sync</p>
+            <h3 className="text-lg font-semibold">
+              {new Date().toLocaleDateString()}
+            </h3>
+          </div>
 
-              {patients.map((p) => (
-                <tr
-                  key={p.id}
-                  className="border-b hover:bg-gray-50 cursor-pointer"
-                  onClick={() =>
-                    router.push(`/doctor-dashboard/patient/${p.email}`)
-                  }
-                >
-                  <td className="py-3">{p.full_name}</td>
-                  <td>{p.email}</td>
-                  <td>{p.symptoms}</td>
-                </tr>
-              ))}
+        </div>
 
-            </tbody>
+        {/* Search */}
 
-          </table>
+        <div className="bg-white p-4 rounded-xl shadow-sm mb-6 flex items-center gap-3">
+          <Search size={18} className="text-gray-400" />
+          <input
+            placeholder="Search patients..."
+            className="w-full outline-none"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+
+        {/* Patients */}
+
+        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+          {loading && (
+            <p className="text-gray-500">Loading patients...</p>
+          )}
+
+          {!loading && filteredPatients.length === 0 && (
+            <p className="text-gray-500">
+              No patients linked yet
+            </p>
+          )}
+
+          {filteredPatients.map((p) => (
+            <div
+              key={p.id}
+              onClick={() =>
+                router.push(`/doctor-dashboard/patient/${p.email}`)
+              }
+              className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition cursor-pointer"
+            >
+              <h3 className="font-semibold text-lg mb-1">
+                {p.full_name}
+              </h3>
+
+              <p className="text-sm text-gray-500 mb-3">
+                {p.email}
+              </p>
+
+              <p className="text-sm text-gray-600 mb-4">
+                {p.symptoms}
+              </p>
+
+              <div className="flex items-center text-blue-600 text-sm font-medium">
+                View Details
+                <ArrowRight size={16} className="ml-1" />
+              </div>
+
+            </div>
+          ))}
 
         </div>
 
