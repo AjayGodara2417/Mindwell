@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     });
 
     // Check doctor exists
-    const [doctor]: any = await db.execute(
+    const [doctor] = await db.execute<mysql.RowDataPacket[]>(
       "SELECT * FROM doctors WHERE doctor_id=?",
       [doctor_id]
     );
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     );
 
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch {
     return NextResponse.json({
       success: false,
       message: "Server error",

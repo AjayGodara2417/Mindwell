@@ -13,7 +13,7 @@ export async function GET(req: Request) {
       database: "mindwell",
     });
 
-    const [patients]: any = await db.execute(
+    const [patients] = await db.execute<mysql.RowDataPacket[]>(
       "SELECT id, full_name, email, symptoms FROM patients WHERE linked_doctor_id=?",
       [doctor_id]
     );
@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       success: true,
       patients,
     });
-  } catch (err) {
+  } catch {
     return NextResponse.json({
       success: false,
       message: "Error fetching patients",

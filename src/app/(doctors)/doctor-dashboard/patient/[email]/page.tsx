@@ -3,9 +3,16 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
+type Assessment = {
+  score: number;
+  percentage: number;
+  severity: string;
+  created_at: string;
+};
+
 export default function PatientDetails() {
   const { email } = useParams();
-  const [assessments, setAssessments] = useState([]);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -37,7 +44,7 @@ export default function PatientDetails() {
         </thead>
 
         <tbody>
-          {assessments.map((a: any, i) => (
+          {assessments.map((a: Assessment, i) => (
             <tr key={i} className="border-b">
               <td className="p-3">{a.score}</td>
               <td>{a.percentage}%</td>
