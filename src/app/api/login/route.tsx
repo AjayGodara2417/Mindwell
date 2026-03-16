@@ -9,7 +9,6 @@ const SECRET = process.env.JWT_SECRET as string;
 export async function POST(req: NextRequest) {
   try {
     const body: LoginRequest = await req.json();
-
     const { email, password } = body;
 
     // -------- Check Doctor --------
@@ -32,14 +31,21 @@ export async function POST(req: NextRequest) {
 
       const token = jwt.sign(
         { id: doctor.id, role: "doctor" },
-        SECRET
+        SECRET,
+        { expiresIn: "7d" }
       );
 
       return NextResponse.json({
+        success: true,
         role: "doctor",
         token,
-        name: doctor.name,
+
+        // doctor details
+        name: doctor.full_name,
         email: doctor.email,
+
+        // IMPORTANT: send doctor_id
+        doctor_id: doctor.doctor_id,
       });
     }
 
@@ -63,13 +69,15 @@ export async function POST(req: NextRequest) {
 
       const token = jwt.sign(
         { id: patient.id, role: "patient" },
-        SECRET
+        SECRET,
+        { expiresIn: "7d" }
       );
 
       return NextResponse.json({
+        success: true,
         role: "patient",
         token,
-        name: patient.name,
+        name: patient.full_name,
         email: patient.email,
       });
     }

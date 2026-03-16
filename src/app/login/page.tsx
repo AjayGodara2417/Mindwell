@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 export default function Login() {
   const [role, setRole] = useState<"patient" | "doctor">("patient");
   const [email, setEmail] = useState("");
+  const [doctor_id, setDoctor_id] = useState("");
   const [password, setPassword] = useState("");
 
   const router = useRouter();
@@ -32,8 +33,12 @@ export default function Login() {
     localStorage.setItem("userEmail", data.email);
     localStorage.setItem("userName", data.name);
     localStorage.setItem("userRole", data.role);
+    localStorage.setItem("doctorId", data.doctor_id);
 
     if (data.role === "doctor") {
+      localStorage.setItem("doctorId", data.doctor_id);
+      localStorage.setItem("userName", data.name);
+      localStorage.setItem("userEmail", data.email);
       router.push("/doctor-dashboard");
     } else {
       router.push("/dashboard");
@@ -54,8 +59,8 @@ export default function Login() {
             type="button"
             onClick={() => setRole("patient")}
             className={`py-2 rounded-lg text-sm ${role === "patient"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600"
+              ? "bg-blue-600 text-white"
+              : "text-gray-600"
               }`}
           >
             Patient
@@ -65,8 +70,8 @@ export default function Login() {
             type="button"
             onClick={() => setRole("doctor")}
             className={`py-2 rounded-lg text-sm ${role === "doctor"
-                ? "bg-blue-600 text-white"
-                : "text-gray-600"
+              ? "bg-blue-600 text-white"
+              : "text-gray-600"
               }`}
           >
             Doctor
@@ -82,6 +87,17 @@ export default function Login() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              className="w-full mt-1 border rounded-lg px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="text-sm text-gray-700">Doctor Id</label>
+            <input
+              type="id"
+              required
+              value={doctor_id}
+              onChange={(e) => setDoctor_id(e.target.value)}
               className="w-full mt-1 border rounded-lg px-3 py-2"
             />
           </div>

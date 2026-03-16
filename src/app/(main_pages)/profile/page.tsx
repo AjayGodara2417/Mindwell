@@ -30,6 +30,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<User | null>(null);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [doctorId, setDoctorId] = useState("");
 
   useEffect(() => {
 
@@ -147,10 +148,52 @@ export default function ProfilePage() {
       <div className="bg-white p-6 rounded-xl shadow">
         <h2 className="font-semibold mb-2">About</h2>
         <p className="text-gray-600">
-          Track your mental wellness journey with MindWell. 
+          Track your mental wellness journey with MindWell.
           Monitor stress levels, record emotions through Face Diary,
           and improve your daily habits.
         </p>
+      </div>
+
+
+      {/* Link Doctor */}
+      <div className="bg-white p-6 rounded-xl shadow">
+        <h2 className="font-semibold mb-4">Link Doctor</h2>
+
+        <div className="flex gap-3">
+          <input
+            type="text"
+            placeholder="Enter Doctor ID"
+            value={doctorId}
+            onChange={(e) => setDoctorId(e.target.value)}
+            className="border px-3 py-2 rounded-lg flex-1"
+          />
+
+          <button
+            onClick={async () => {
+              const email = user?.email;
+
+              const res = await fetch("/api/link-doctor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  doctor_id: doctorId,
+                  patient_email: email,
+                }),
+              });
+
+              const data = await res.json();
+
+              if (data.success) {
+                alert("Doctor linked successfully");
+              } else {
+                alert(data.message);
+              }
+            }}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
+          >
+            Link
+          </button>
+        </div>
       </div>
 
       {/* -------- Stats -------- */}
@@ -200,12 +243,12 @@ export default function ProfilePage() {
                 item.severity === "Very Severe"
                   ? "bg-red-500"
                   : item.severity === "Severe"
-                  ? "bg-orange-500"
-                  : item.severity === "Moderate"
-                  ? "bg-yellow-500"
-                  : item.severity === "Mild"
-                  ? "bg-blue-500"
-                  : "bg-green-500";
+                    ? "bg-orange-500"
+                    : item.severity === "Moderate"
+                      ? "bg-yellow-500"
+                      : item.severity === "Mild"
+                        ? "bg-blue-500"
+                        : "bg-green-500";
 
               return (
 
