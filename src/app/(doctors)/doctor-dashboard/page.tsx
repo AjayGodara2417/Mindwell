@@ -3,9 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+type Patient = {
+  id: string;
+  full_name: string;
+  email: string;
+  symptoms: string;
+};
+
 export default function DoctorDashboard() {
   const router = useRouter();
-  const [patients, setPatients] = useState<any[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
