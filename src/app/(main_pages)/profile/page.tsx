@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import {
   MapPin,
   Calendar,
@@ -9,6 +8,7 @@ import {
   CheckCircle2,
   Video,
   Award,
+  User2Icon,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -107,7 +107,6 @@ export default function ProfilePage() {
   
   const maxScore = Math.max(...assessments.map((a) => a.score), 75); // 75 = max possible score
 
-  // const height = (item.score / maxScore) * 100;
   
   return (
     <div className="max-w-5xl mx-auto space-y-8">
@@ -116,16 +115,11 @@ export default function ProfilePage() {
 
       <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
 
-        <div className="w-20 h-20 relative rounded-full overflow-hidden bg-gray-200">
-          <Image
-            src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e"
-            alt="avatar"
-            fill
-            className="object-cover"
-          />
+        <div className="w-8 h-10 justify-center relative overflow-hidden ">
+          <User2Icon />
         </div>
 
-        <div>
+        <div className="flex flex-col gap-0.5">
           <h1 className="text-xl font-bold text-gray-900">
             {user?.full_name || "User"}
           </h1>
