@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Bell, Shield, Lock, LogOut } from "lucide-react";
+import { User, Shield, Lock, LogOut } from "lucide-react";
 
 export default function Settings() {
 
@@ -13,19 +13,7 @@ export default function Settings() {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const [notifications, setNotifications] = useState({
-    mood: true,
-    sleep: true,
-    report: false,
-  });
   const [showModal, setShowModal] = useState(false);
-
-  const toggle = (key: keyof typeof notifications) => {
-    setNotifications((prev) => ({
-      ...prev,
-      [key]: !prev[key],
-    }));
-  };
 
   /* -------- Fetch User Like Profile Page -------- */
 
@@ -104,33 +92,6 @@ export default function Settings() {
 
       </div>
 
-      {/* Notifications */}
-      <div className="bg-white p-6 rounded-xl shadow-sm space-y-6">
-
-        <div className="flex items-center gap-2 font-semibold">
-          <Bell size={18} /> Notifications
-        </div>
-
-        <Toggle
-          title="Daily Mood Reminder"
-          enabled={notifications.mood}
-          onToggle={() => toggle("mood")}
-        />
-
-        <Toggle
-          title="Sleep Reminder"
-          enabled={notifications.sleep}
-          onToggle={() => toggle("sleep")}
-        />
-
-        <Toggle
-          title="Weekly Report"
-          enabled={notifications.report}
-          onToggle={() => toggle("report")}
-        />
-
-      </div>
-
       {/* Security */}
       <div className="bg-white p-6 rounded-xl shadow-sm">
 
@@ -172,36 +133,6 @@ export default function Settings() {
   );
 }
 
-/* -------- Toggle -------- */
-
-interface ToggleProps {
-  title: string;
-  enabled: boolean;
-  onToggle: () => void;
-}
-
-function Toggle({ title, enabled, onToggle }: ToggleProps) {
-  return (
-    <div className="flex justify-between items-center">
-
-      <p>{title}</p>
-
-      <button
-        onClick={onToggle}
-        className={`w-10 h-5 rounded-full ${enabled ? "bg-blue-600" : "bg-gray-300"
-          } relative`}
-      >
-
-        <div
-          className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition ${enabled ? "right-0.5" : "left-0.5"
-            }`}
-        />
-
-      </button>
-
-    </div>
-  );
-}
 
 /* -------- Change Password Modal -------- */
 
