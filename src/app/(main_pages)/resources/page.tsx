@@ -111,26 +111,49 @@ export default function ResourcesPage() {
         <div className="grid md:grid-cols-3 gap-6">
           {categories.map((cat, i) => {
             const Icon = cat.icon;
+
             return (
               <div
                 key={i}
-                className="bg-white border rounded-xl p-6 hover:shadow-md transition"
+                className="group relative bg-white border border-gray-200 rounded-2xl p-6 
+        hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer"
               >
+                {/* Glow Effect */}
+                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition duration-300 bg-linear-to-br from-blue-50 to-transparent pointer-events-none" />
+
+                {/* Icon */}
                 <div
-                  className={`${cat.bg} ${cat.color} w-10 h-10 rounded-lg flex items-center justify-center mb-4`}
+                  className={`${cat.bg} ${cat.color} w-12 h-12 rounded-xl flex items-center justify-center mb-5 
+          group-hover:scale-110 transition`}
                 >
-                  <Icon size={20} />
+                  <Icon size={22} />
                 </div>
 
-                <h3 className="font-semibold text-gray-900 mb-2">
+                {/* Title */}
+                <h3 className="font-semibold text-lg text-gray-900 mb-2 group-hover:text-blue-600 transition">
                   {cat.title}
                 </h3>
 
-                <p className="text-sm text-gray-500 mb-4">{cat.desc}</p>
+                {/* Description */}
+                <p className="text-sm text-gray-500 mb-5 leading-relaxed">
+                  {cat.desc}
+                </p>
 
-                <button className="text-blue-600 flex items-center gap-1 text-sm font-medium">
-                  Explore <ChevronRight size={16} />
-                </button>
+                {/* CTA */}
+                <div className="flex items-center justify-between">
+                  <span className="text-blue-600 text-sm font-medium flex items-center gap-1 group-hover:gap-2 transition-all">
+                    Explore <ChevronRight size={16} />
+                  </span>
+
+                  {/* Subtle Arrow Circle */}
+                  <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center 
+          group-hover:bg-blue-600 transition">
+                    <ChevronRight
+                      size={16}
+                      className="text-gray-500 group-hover:text-white transition"
+                    />
+                  </div>
+                </div>
               </div>
             );
           })}
