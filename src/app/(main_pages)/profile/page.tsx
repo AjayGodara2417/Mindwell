@@ -104,7 +104,11 @@ export default function ProfilePage() {
       icon: Award,
     },
   ];
+  
+  const maxScore = Math.max(...assessments.map((a) => a.score), 75); // 75 = max possible score
 
+  // const height = (item.score / maxScore) * 100;
+  
   return (
     <div className="max-w-5xl mx-auto space-y-8">
 
@@ -228,71 +232,67 @@ export default function ProfilePage() {
         </div>
 
         {assessments.length === 0 ? (
-
           <p className="text-gray-500 text-sm">
             No assessment data available.
           </p>
-
         ) : (
+          <div className="overflow-x-auto">
+            <div className="flex items-end h-72 gap-8 min-w-175">
 
-          <div className="flex items-end h-40 gap-4">
+              {assessments.map((item, i) => {
 
-            {assessments.map((item, i) => {
+                const height = (item.score / maxScore) * 100;
 
-              const barColor =
-                item.severity === "Very Severe"
-                  ? "bg-red-500"
-                  : item.severity === "Severe"
-                    ? "bg-orange-500"
-                    : item.severity === "Moderate"
-                      ? "bg-yellow-500"
-                      : item.severity === "Mild"
-                        ? "bg-blue-500"
-                        : "bg-green-500";
+                const barColor =
+                  item.severity === "Very Severe"
+                    ? "bg-red-500"
+                    : item.severity === "Severe"
+                      ? "bg-orange-500"
+                      : item.severity === "Moderate"
+                        ? "bg-yellow-500"
+                        : item.severity === "Mild"
+                          ? "bg-blue-500"
+                          : "bg-green-500";
 
-              return (
-
-                <div
-                  key={i}
-                  className="flex flex-col items-center flex-1"
-                >
-
-                  {/* Score Label */}
-
-                  <p className="text-xs font-semibold text-gray-700">
-                    {item.score}
-                  </p>
-
-                  {/* Bar */}
-
+                return (
                   <div
-                    className={`w-full rounded ${barColor}`}
-                    style={{
-                      height: `${item.percentage}%`,
-                    }}
-                  />
+                    key={i}
+                    className="flex flex-col items-center w-16"
+                  >
 
-                  {/* Date */}
+                    {/* Score */}
+                    <p className="text-sm font-semibold text-gray-800 mb-2">
+                      {item.score}
+                    </p>
 
-                  <span className="text-xs text-gray-500 mt-1">
-                    {new Date(item.created_at).toLocaleDateString(
-                      "en-US",
-                      {
+                    {/* Bar Container */}
+                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-end">
+
+                      <div
+                        className={`${barColor} w-full rounded-lg transition-all duration-500`}
+                        style={{
+                          height: `${height}%`,
+                          minHeight: "100px",
+                        }}
+                        title={`Score: ${item.score} | ${item.severity}`}
+                      />
+
+                    </div>
+
+                    {/* Date */}
+                    <span className="text-xs text-gray-500 mt-2 text-center">
+                      {new Date(item.created_at).toLocaleDateString("en-US", {
                         month: "short",
                         day: "numeric",
-                      }
-                    )}
-                  </span>
+                      })}
+                    </span>
 
-                </div>
-
-              );
-            })}
-
+                  </div>
+                );
+              })}
+            </div>
           </div>
-
         )}
-
       </div>
 
       {/* -------- Severity Legend -------- */}
