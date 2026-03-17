@@ -59,10 +59,10 @@ export default function DashboardLayout({
             </Link>
 
             <Link
-              href="/result-dashboard"
+              href="/stats"
               className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
             >
-              <BarChart3 size={18} /> Results
+              <BarChart3 size={18} /> Stats
             </Link>
 
             <Link
