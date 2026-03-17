@@ -147,17 +147,6 @@ export default function ProfilePage() {
 
       </div>
 
-      {/* -------- About Section -------- */}
-
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="font-semibold mb-2">About</h2>
-        <p className="text-gray-600">
-          Track your mental wellness journey with MindWell.
-          Monitor stress levels, record emotions through Face Diary,
-          and improve your daily habits.
-        </p>
-      </div>
-
 
       {/* Link Doctor */}
       <div className="bg-white p-6 rounded-xl shadow">
