@@ -1,36 +1,255 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📘 **Mental Health Tracking Web App – Documentation**
 
-## Getting Started
 
-First, run the development server:
+## 🧠 **Overview**
+
+This is a full-stack mental health tracking platform built using:
+
+* **Next.js 14 (App Router)**
+* **TypeScript**
+* **Tailwind CSS**
+* **MySQL (custom API, no ORM)**
+
+The platform allows:
+
+* Patients to take mental health assessments
+* Track trends over time
+* Log sleep data
+* Doctors to monitor patient progress
+
+---
+
+## 🚀 **Features**
+
+### 👤 Authentication
+
+* Patient & Doctor signup/login
+* JWT-based authentication
+* Role-based access
+
+---
+
+### 🧑‍⚕️ Patient Features
+
+* Take mental health assessments
+* View:
+
+  * Latest result
+  * Trend charts
+
+* Sleep tracking system
+* Profile management
+
+---
+
+### 🩺 Doctor Features
+
+* View linked patients
+* Access patient assessment history
+* Dashboard with charts
+
+---
+
+### 📊 Stats Page
+
+* Mental health trend (line chart)
+* Sleep tracker (input + chart)
+* Latest score card
+* Real-time database sync
+
+---
+
+## 🏗️ **Project Structure**
+
+```
+src/
+│
+├── app/
+│   ├── (main_pages)/
+│   ├── dashboard/
+│   ├── stats/          
+│   ├── profile/
+│   ├── settings/
+│   ├── planner/
+│   ├── face-diary/
+│   ├── resources/
+│   ├── doctors/
+│   │
+│   ├── api/
+│   │   ├── assessment/
+│   │   ├── sleep/
+│   │   ├── login/
+│   │   ├── signup/
+│   │   ├── profile/
+│   │   ├── change-password/
+│   │   ├── link-doctor/
+│   │   ├── doctor-patients/
+│
+├── components/
+├── lib/                ← DB connection & helpers
+├── types/              ← TypeScript types
+```
+
+---
+
+## 🗄️ **Database Design (MySQL)**
+
+### 📌 `users`
+
+```sql
+id
+email
+password
+role (patient/doctor)
+created_at
+```
+
+---
+
+### 📌 `assessments`
+
+```sql
+id
+patient_email
+score
+severity
+created_at
+```
+
+---
+
+### 📌 `sleep`
+
+```sql
+id
+email
+hours
+created_at
+```
+
+---
+
+### 📌 `doctor_patient`
+
+```sql
+id
+doctor_email
+patient_email
+```
+
+---
+
+## 📊 **Charts Implementation**
+
+Library: `recharts`
+
+### Key Fix Applied:
+
+* Use `toISOString()` for unique X-axis values
+* Prevents tooltip mismatch
+
+```ts
+date: new Date(created_at).toISOString()
+```
+
+---
+
+## 🎨 **UI/UX Design Principles**
+
+* Card-based layout
+* Clean spacing (`p-6`, `rounded-2xl`)
+* Soft shadows (`shadow-lg`)
+* Responsive design
+* Focus states for inputs
+* Minimal + modern dashboard style
+
+---
+
+## ⚙️ **Setup Instructions**
+
+---
+
+### 1️⃣ Install Dependencies
+
+```bash
+git clone
+```
+ After Installation
+
+```bash
+npm install
+```
+
+---
+
+### 2️⃣ Configure Environment
+
+`.env.local`
+
+```env
+NEXT_PUBLIC_ML_API_URL=http://localhost:5000
+JWT_SECRET=
+
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=yourpassword
+DB_NAME=mental_health
+```
+
+---
+
+### 3️⃣ Run Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 4️⃣ Open App
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+http://localhost:3000
+```
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🔐 **Authentication Flow**
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. User logs in
+2. JWT stored in `localStorage`
+3. Token sent in headers:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```ts
+Authorization: Bearer <token>
+```
 
-## Deploy on Vercel
+4. Backend verifies token
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+---
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 📈 **Future Improvements**
+
+### 🚀 High Impact Features
+
+* AI-based mental health insights
+* Sleep vs stress correlation
+* Weekly analytics dashboard
+* Notifications/reminders
+* Dark mode
+
+---
+
+### 📊 Advanced Analytics
+
+* Average score trends
+* Risk detection system
+* Doctor alerts
+
+---
+
+## 🧑‍💻 **Author**
+
+**Ajay Godara**
+Full stack web Developer (Next.js + Tailwind + MySQL)
+
