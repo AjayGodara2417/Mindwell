@@ -6,7 +6,6 @@ import {
   Calendar,
   TrendingUp,
   CheckCircle2,
-  Video,
   Award,
   User2Icon,
 } from "lucide-react";
@@ -32,16 +31,15 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [doctorId, setDoctorId] = useState("");
 
+  const [points, setPoints] = useState(0);
+  const [tasksCompleted, setTasksCompleted] = useState(0);
+
   useEffect(() => {
-
     const fetchData = async () => {
-
       try {
-
         const token = localStorage.getItem("token");
 
-        /* -------- Fetch User Profile -------- */
-
+        /* -------- Profile -------- */
         const profileRes = await fetch("/api/profile", {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -49,11 +47,9 @@ export default function ProfilePage() {
         });
 
         const profileData = await profileRes.json();
-
         setUser(profileData);
 
-        /* -------- Fetch Assessment History -------- */
-
+        /* -------- Assessments -------- */
         const res = await fetch(
           `/api/assessment?email=${profileData.email}`
         );
@@ -64,6 +60,16 @@ export default function ProfilePage() {
           setAssessments(assessmentData.history);
         }
 
+        /* -------- NEW: Fetch Points -------- */
+        const patientRes = await fetch(
+          `/api/patient?email=${profileData.email}`
+        );
+
+        const patientData = await patientRes.json();
+
+        setPoints(patientData.points || 0);
+        setTasksCompleted(patientData.tasks_completed || 0);
+
       } catch (error) {
         console.error("Profile load error:", error);
       }
@@ -72,7 +78,6 @@ export default function ProfilePage() {
     };
 
     fetchData();
-
   }, []);
 
   /* -------- Loading State -------- */
@@ -89,25 +94,25 @@ export default function ProfilePage() {
 
   const stats = [
     {
-      label: "Mood Checks",
-      value: assessments.length,
-      icon: Video,
+      label: "Points",
+      value: points,
+      icon: Award,
     },
     {
-      label: "Tasks Done",
-      value: 42,
+      label: "Tasks Completed",
+      value: tasksCompleted,
       icon: CheckCircle2,
     },
     {
-      label: "Streak",
-      value: "7 Days",
-      icon: Award,
+      label: "Assessments",
+      value: assessments.length,
+      icon: TrendingUp,
     },
   ];
-  
+
   const maxScore = Math.max(...assessments.map((a) => a.score), 75); // 75 = max possible score
 
-  
+
   return (
     <div className="max-w-5xl mx-auto space-y-8">
 
