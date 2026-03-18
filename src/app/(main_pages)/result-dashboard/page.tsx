@@ -1,8 +1,17 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
+import { Suspense } from "react";
 
 export default function ResultDashboard() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ResultDashboardContent />
+    </Suspense>
+  );
+}
+
+function ResultDashboardContent() {
   const params = useSearchParams();
   const router = useRouter();
 
