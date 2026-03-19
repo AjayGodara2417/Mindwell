@@ -201,11 +201,11 @@ export default function FaceDiary() {
   }
 
   return (
-  <div className="max-w-4xl mx-auto space-y-8">
+  <div className="max-w-4xl py-10 mx-auto space-y-8">
 
     {/* Header */}
     <div>
-      <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+      <h1 className="text-3xl font-bold flex items-center gap-3">
         <Video className="text-blue-500"/>
         Face Diary
       </h1>

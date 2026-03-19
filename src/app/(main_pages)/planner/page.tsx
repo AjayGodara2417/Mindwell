@@ -130,7 +130,7 @@ export default function PlannerPage() {
   const progress = totalCount ? (completedCount / totalCount) * 100 : 0;
 
   return (
-    <div className="min-h-screen p-6 bg-gray-50">
+    <div className="min-h-full p-6 bg-gray-50">
       <div className="max-w-4xl mx-auto">
 
         <h1 className="text-3xl font-bold mb-6 flex items-center gap-2">

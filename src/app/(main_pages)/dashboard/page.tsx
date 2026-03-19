@@ -99,7 +99,7 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="flex justify-center w-full py-16 px-6 bg-gray-100 min-h-screen">
+    <div className="flex justify-center h-full items-center w-full bg-gray-100">
 
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-200 p-10">
 

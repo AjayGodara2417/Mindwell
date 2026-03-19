@@ -131,12 +131,12 @@ export default function Stats() {
   }));
 
   return (
-    <div className="max-w-6xl mx-auto px-6 py-16 space-y-12">
+    <div className="max-w-6xl p-10 mx-auto space-y-12">
 
       {/* -------- HEADER -------- */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          Your Mental Health Stats
+          Your Health Stats 😊
         </h1>
         <p className="text-gray-500 mt-1">
           Track your progress and monitor your wellbeing.
@@ -145,7 +145,7 @@ export default function Stats() {
 
       {/* -------- LATEST RESULT -------- */}
       {latest && (
-        <div className="flex justify-center">
+        <div className="flex">
           <div className="w-full max-w-sm bg-white p-8 rounded-2xl shadow-lg border text-center hover:shadow-xl transition">
 
             <h2 className="text-sm text-gray-500 mb-2">
@@ -261,7 +261,7 @@ export default function Stats() {
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="text-blue-600" />
           <h2 className="font-semibold text-lg">
-            Mental Health Trend
+            Assessment Result
           </h2>
         </div>
 

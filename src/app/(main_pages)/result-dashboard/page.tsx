@@ -40,7 +40,7 @@ function ResultDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gray-100 px-6 py-12">
+    <div className="min-h-screen flex justify-center items-center bg-gray-100">
 
       <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10 border">
 
@@ -115,10 +115,10 @@ function ResultDashboardContent() {
           </button>
 
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push("/stats")}
             className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
           >
-            Go Home
+            Check Stats
           </button>
 
         </div>

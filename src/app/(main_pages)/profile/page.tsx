@@ -114,7 +114,7 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8">
+    <div className="max-w-5xl py-10 mx-auto space-y-8">
 
       {/* -------- Profile Header -------- */}
 

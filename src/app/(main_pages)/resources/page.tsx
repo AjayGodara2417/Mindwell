@@ -60,7 +60,7 @@ export default function ResourcesPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-6xl px-5 py-15 mx-auto space-y-12">
 
       {/* Header */}
       <div>
