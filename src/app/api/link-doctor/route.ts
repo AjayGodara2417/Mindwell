@@ -7,10 +7,10 @@ export async function POST(req: Request) {
     const { doctor_id, patient_email } = await req.json();
 
     const db = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "@QAZajay2417$",
-      database: "mindwell",
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
     });
 
     // Check doctor exists

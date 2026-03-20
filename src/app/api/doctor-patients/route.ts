@@ -7,10 +7,10 @@ export async function GET(req: Request) {
     const doctor_id = searchParams.get("doctor_id");
 
     const db = await mysql.createConnection({
-      host: "localhost",
-      user: "root",
-      password: "@QAZajay2417$",
-      database: "mindwell",
+      host: process.env.DB_HOST,
+      user: process.env.DB_USER,
+      password: process.env.DB_PASSWORD,
+      database: process.env.DB_NAME,
     });
 
     const [patients] = await db.execute<mysql.RowDataPacket[]>(
