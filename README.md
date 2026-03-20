@@ -65,6 +65,13 @@ The platform allows:
 src/
 │
 ├── app/
+│   ├── (doctor)/
+│   ├── doctor-dashboard/
+│   ├── patient/
+│   ├── patient/[email]          
+│   ├── doctorSettings/
+│   ├── layout.tsx
+│   │
 │   ├── (main_pages)/
 │   ├── dashboard/
 │   ├── stats/          
@@ -74,6 +81,7 @@ src/
 │   ├── face-diary/
 │   ├── resources/
 │   ├── doctors/
+│   ├── layout.tsx
 │   │
 │   ├── api/
 │   │   ├── assessment/
@@ -84,75 +92,117 @@ src/
 │   │   ├── change-password/
 │   │   ├── link-doctor/
 │   │   ├── doctor-patients/
+│   │
+│   ├── login/
+│   ├── signup
+│   ├── layout.tsx
+│   ├── page.tsx
 │
 ├── components/
 ├── lib/                ← DB connection & helpers
+│    ├── db.ts/
 ├── types/              ← TypeScript types
+│    ├── assessment.ts/
+│    ├── user.ts/
 ```
 
 ---
 
 ## 🗄️ **Database Design (MySQL)**
 
-### 📌 `users`
+### 📌 `database`
 
 ```sql
-id
-email
-password
-role (patient/doctor)
-created_at
+CREATE DATABASE mindwell;
+USE mindwell;
 ```
 
----
+### 📌 `doctors`
+
+```sql
+CREATE TABLE doctors (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  doctor_id VARCHAR(50) UNIQUE NOT NULL,
+  speciality VARCHAR(255),
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 📌 `patient`
+
+```sql
+CREATE TABLE patients (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  full_name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) UNIQUE NOT NULL,
+  symptoms TEXT,
+  password VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  linked_doctor_id VARCHAR(255),
+  points INT DEFAULT 0,
+  tasks_completed INT DEFAULT 0
+);
+```
 
 ### 📌 `assessments`
 
 ```sql
-id
-patient_email
-score
-severity
-created_at
+CREATE TABLE assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_email VARCHAR(255),
+  score INT,
+  percentage FLOAT,
+  severity VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
----
-
-### 📌 `sleep`
+### 📌 `planner tasks`
 
 ```sql
-id
-email
-hours
-created_at
+CREATE TABLE planner_tasks (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_email VARCHAR(255),
+  text TEXT,
+  type ENUM('daily','weekly','monthly'),
+  completed BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 ```
 
----
-
-### 📌 `doctor_patient`
+### 📌 `mood logs`
 
 ```sql
-id
-doctor_email
-patient_email
+CREATE TABLE mood_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(255) UNIQUE NOT NULL,
+  mood_points INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
 
----
+### 📌 `sleep logs`
+
+```sql
+CREATE TABLE sleep_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(255) UNIQUE NOT NULL,
+  hours INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## 📊 **Charts Implementation**
 
 Library: `recharts`
 
-### Key Fix Applied:
-
-* Use `toISOString()` for unique X-axis values
-* Prevents tooltip mismatch
-
-```ts
-date: new Date(created_at).toISOString()
+```bash
+npm i recharts
 ```
-
----
 
 ## 🎨 **UI/UX Design Principles**
 
@@ -167,38 +217,23 @@ date: new Date(created_at).toISOString()
 
 ## ⚙️ **Setup Instructions**
 
----
-
 ### 1️⃣ Install Dependencies
 
 ```bash
-git clone
+fork this repository
 ```
- After Installation
+
+```bash
+git clone 'forked repository link'
+```
+
+After Installation, enter the directory and run:
 
 ```bash
 npm install
 ```
 
----
-
-### 2️⃣ Configure Environment
-
-`.env.local`
-
-```env
-NEXT_PUBLIC_ML_API_URL=http://localhost:5000
-JWT_SECRET=
-
-DB_HOST=localhost
-DB_USER=root
-DB_PASSWORD=yourpassword
-DB_NAME=mental_health
-```
-
----
-
-### 3️⃣ Run Development Server
+### 2️⃣ Run the app
 
 ```bash
 npm run dev
@@ -206,27 +241,47 @@ npm run dev
 
 ---
 
-### 4️⃣ Open App
+### 3️⃣ Configure Environment
+Create an environment variable file:
 
+`.env.local`
+Add the following to the file
+
+```bash
+NEXT_PUBLIC_ML_API_URL=http://localhost:5000
+JWT_SECRET= your_secret_key
+
+DB_HOST= localhost
+DB_USER= root
+DB_PASSWORD= your_password
+DB_NAME= mental_health
 ```
+
+### 4️⃣ Run Development Server
+
+```bash
+npm run dev
+```
+
+### 5️⃣ Open App
+
+Open in web:
+```bash
 http://localhost:3000
 ```
-
----
 
 ## 🔐 **Authentication Flow**
 
 1. User logs in
 2. JWT stored in `localStorage`
-3. Token sent in headers:
+3. Token sent in headers
 
 ```ts
 Authorization: Bearer <token>
 ```
 
-4. Backend verifies token
+Backend verifies token
 
----
 
 ## 📈 **Future Improvements**
 
@@ -238,7 +293,6 @@ Authorization: Bearer <token>
 * Notifications/reminders
 * Dark mode
 
----
 
 ### 📊 Advanced Analytics
 
@@ -246,10 +300,8 @@ Authorization: Bearer <token>
 * Risk detection system
 * Doctor alerts
 
----
 
 ## 🧑‍💻 **Author**
 
 **Ajay Godara**
 Full stack web Developer (Next.js + Tailwind + MySQL)
-
