@@ -40,91 +40,95 @@ function ResultDashboardContent() {
   }
 
   return (
-    <div className="min-h-screen flex justify-center items-center bg-gray-100">
+  <div className="min-h-screen flex justify-center items-center bg-[#f6f8f7] p-6">
 
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg p-10 border">
+    <div className="w-full max-w-2xl bg-white rounded-2xl shadow-sm p-8 space-y-6">
 
-        {/* Title */}
-        <h1 className="text-3xl font-bold text-center mb-6">
+      {/* Title */}
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold text-gray-900">
           Assessment Report
         </h1>
+        <p className="text-sm text-gray-500">
+          Your mental health summary
+        </p>
+      </div>
 
-        {/* Score Card */}
-        <div className="bg-gray-50 rounded-xl p-6 mb-8 border">
+      {/* Score Card */}
+      <div className="bg-[#f4f7f6] rounded-2xl p-6 space-y-3">
 
-          <div className="flex justify-between mb-4">
-            <span className="text-gray-600">Total Score</span>
-            <span className="font-semibold">{score} / 75</span>
-          </div>
-
-          <div className="flex justify-between mb-4">
-            <span className="text-gray-600">Percentage</span>
-            <span className="font-semibold">{percentage}%</span>
-          </div>
-
-          <div className="flex justify-between">
-            <span className="text-gray-600">Severity Level</span>
-            <span className="font-semibold">{level}</span>
-          </div>
-
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Total Score</span>
+          <span className="font-medium">{score} / 75</span>
         </div>
 
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="w-full h-3 bg-gray-200 rounded overflow-hidden">
-            <div
-              className={`h-3 ${color} transition-all duration-700`}
-              style={{ width: `${percentage}%` }}
-            />
-          </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Percentage</span>
+          <span className="font-medium">{percentage}%</span>
         </div>
 
-        {/* Interpretation */}
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-3">
-            Interpretation
-          </h2>
-          <p className="text-gray-600 leading-relaxed">
-            {message}
-          </p>
-        </div>
-
-        {/* Suggestions */}
-        <div className="mb-10">
-          <h2 className="text-xl font-semibold mb-3">
-            Suggestions
-          </h2>
-
-          <ul className="list-disc pl-5 text-gray-600 space-y-2">
-            <li>Maintain a regular sleep schedule</li>
-            <li>Exercise at least 3–4 times a week</li>
-            <li>Talk to friends or family</li>
-            <li>Practice mindfulness or meditation</li>
-            <li>Seek professional help if symptoms persist</li>
-          </ul>
-        </div>
-
-        {/* Actions */}
-        <div className="flex justify-between">
-
-          <button
-            onClick={() => router.push("/dashboard")}
-            className="px-6 py-2 rounded-lg border hover:bg-gray-50"
-          >
-            Retake Test
-          </button>
-
-          <button
-            onClick={() => router.push("/stats")}
-            className="px-6 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
-          >
-            Check Stats
-          </button>
-
+        <div className="flex justify-between text-sm">
+          <span className="text-gray-500">Severity</span>
+          <span className="font-medium">{level}</span>
         </div>
 
       </div>
 
+      {/* Progress */}
+      <div>
+        <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div
+            className={`${color} h-2 rounded-full transition-all duration-700`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      </div>
+
+      {/* Interpretation */}
+      <div>
+        <h2 className="text-lg font-medium mb-2 text-gray-800">
+          Interpretation
+        </h2>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          {message}
+        </p>
+      </div>
+
+      {/* Suggestions */}
+      <div>
+        <h2 className="text-lg font-medium mb-2 text-gray-800">
+          Suggestions
+        </h2>
+
+        <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
+          <li>Maintain a regular sleep schedule</li>
+          <li>Exercise regularly</li>
+          <li>Talk to someone you trust</li>
+          <li>Practice mindfulness</li>
+          <li>Seek help if needed</li>
+        </ul>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-between gap-4 pt-4">
+
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex-1 border border-gray-200 py-2 rounded-xl text-sm hover:bg-gray-50"
+        >
+          Retake Test
+        </button>
+
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex-1 bg-[#2f5d50] text-white py-2 rounded-xl text-sm hover:opacity-90"
+        >
+          View Stats
+        </button>
+
+      </div>
+
     </div>
-  );
+  </div>
+);
 }

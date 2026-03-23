@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Calendar,
@@ -7,7 +10,7 @@ import {
   User,
   Settings,
   LogOut,
-  BarChart3
+  BarChart3,
 } from "lucide-react";
 
 export default function DashboardLayout({
@@ -15,93 +18,72 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const pathname = usePathname();
+
+  const navItems = [
+    { href: "/dashboard", icon: Home, label: "Dashboard" },
+    { href: "/assessment", icon: BarChart3, label: "Assessment" },
+    { href: "/planner", icon: Calendar, label: "Schedule" },
+    { href: "/face-diary", icon: Video, label: "Journal" },
+    { href: "/resources", icon: BookOpen, label: "Resources" },
+    { href: "/profile", icon: User, label: "Profile" },
+    { href: "/settings", icon: Settings, label: "Settings" },
+  ];
+
   return (
-    <div className="flex min-h-screen bg-gray-100 text-gray-800">
+    <div className="flex min-h-screen bg-[#f6f8f7] text-gray-800">
 
       {/* Sidebar */}
-      <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between p-6">
+      <aside className="w-64 bg-[#eef3f1] border-r border-gray-200 flex flex-col justify-between p-6">
 
         <div>
           {/* Logo */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center font-bold">
-              M
-            </div>
-
-            <div>
-              <p className="font-semibold text-lg text-gray-800">MindWell</p>
-              <p className="text-xs text-gray-500">Mental Wellness</p>
-            </div>
+          <div className="mb-10">
+            <h1 className="text-xl font-semibold text-[#2f5d50]">
+              Mindwell
+            </h1>
+            <p className="text-xs text-gray-500">
+              Get fit with AI powered platform
+            </p>
           </div>
 
           {/* Navigation */}
           <nav className="flex flex-col gap-2">
+            {navItems.map((item, i) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
 
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <Home size={18} /> Home
-            </Link>
-
-            <Link
-              href="/planner"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <Calendar size={18} /> Planner
-            </Link>
-
-            <Link
-              href="/face-diary"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <Video size={18} /> Face Diary
-            </Link>
-
-            <Link
-              href="/stats"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <BarChart3 size={18} /> Stats
-            </Link>
-
-            <Link
-              href="/resources"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <BookOpen size={18} /> Resources
-            </Link>
-
-            <Link
-              href="/profile"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <User size={18} /> Profile
-            </Link>
-
-            <Link
-              href="/settings"
-              className="flex items-center gap-3 p-3 rounded-lg text-gray-600 hover:bg-blue-50 hover:text-blue-600 transition"
-            >
-              <Settings size={18} /> Settings
-            </Link>
-
+              return (
+                <Link
+                  key={i}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition
+                  ${isActive
+                      ? "bg-white shadow-sm text-[#2f5d50]"
+                      : "text-gray-600 hover:bg-white hover:shadow-sm"}
+                  `}
+                >
+                  <Icon size={18} />
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         </div>
 
         {/* Sign Out */}
-        <button className="flex items-center gap-3 text-gray-500 hover:text-red-500 transition">
-          <LogOut size={18} />
+        <button className="flex items-center gap-2 text-gray-500 hover:text-red-500 text-sm" onClick={() => {
+          localStorage.clear();
+          window.location.href = "/login";
+        }}>
+          <LogOut size={16} />
           Sign Out
         </button>
 
       </aside>
 
-      {/* Page Content */}
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
-
+      {/* Content */}
+      <main className="flex-1 p-8">{children}</main>
     </div>
   );
 }

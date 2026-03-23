@@ -201,28 +201,28 @@ export default function FaceDiary() {
   }
 
   return (
-  <div className="max-w-4xl py-10 mx-auto space-y-8">
+  <div className="max-w-4xl mx-auto space-y-8">
 
     {/* Header */}
     <div>
-      <h1 className="text-3xl font-bold flex items-center gap-3">
-        <Video className="text-blue-500"/>
+      <h1 className="text-2xl font-semibold flex items-center gap-2 text-gray-900">
+        <Video className="text-[#2f5d50]" />
         Face Diary
       </h1>
-      <p className="text-gray-400 mt-1">
-        Record a 30 second video to analyze your emotional state
+      <p className="text-sm text-gray-500 mt-1">
+        Record a short video to analyze your emotional state
       </p>
     </div>
 
-    {/* Camera Card */}
-    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+    {/* Camera */}
+    <div className="bg-white p-4 rounded-2xl shadow-sm">
 
-      <div className="relative aspect-video rounded-lg overflow-hidden bg-black">
+      <div className="relative aspect-video rounded-xl overflow-hidden bg-black">
 
         {analyzing && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 z-20">
-            <Loader2 className="animate-spin w-10 h-10 text-blue-500 mb-3"/>
-            <p className="text-white">Analyzing emotions...</p>
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 z-20">
+            <Loader2 className="animate-spin w-8 h-8 text-white mb-2" />
+            <p className="text-white text-sm">Analyzing...</p>
           </div>
         )}
 
@@ -239,15 +239,16 @@ export default function FaceDiary() {
         />
 
         {capturing && (
-          <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-sm">
+          <div className="absolute top-3 right-3 bg-red-500 text-white px-3 py-1 rounded-full text-xs">
             00:{timeLeft < 10 ? `0${timeLeft}` : timeLeft}
           </div>
         )}
       </div>
 
-      {/* Face Status */}
-      <div className="flex justify-between items-center mt-4 text-sm">
-        <span className="text-gray-400">
+      {/* Status */}
+      <div className="flex justify-between items-center mt-4 text-xs">
+
+        <span className="text-gray-500">
           {loadingModels
             ? "Loading AI models..."
             : faceDetected
@@ -256,8 +257,10 @@ export default function FaceDiary() {
         </span>
 
         <span
-          className={`px-2 py-1 rounded text-xs ${
-            faceDetected ? "bg-green-500/20 text-green-400" : "bg-red-500/20 text-red-400"
+          className={`px-3 py-1 rounded-full ${
+            faceDetected
+              ? "bg-green-100 text-green-600"
+              : "bg-red-100 text-red-500"
           }`}
         >
           {faceDetected ? "Ready" : "Align face"}
@@ -272,48 +275,49 @@ export default function FaceDiary() {
         {capturing ? (
           <button
             onClick={handleStopCapture}
-            className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center hover:scale-110 transition"
+            className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center hover:scale-105 transition"
           >
-            <StopCircle />
+            <StopCircle className="text-white" />
           </button>
         ) : (
           <button
             disabled={!faceDetected || loadingModels}
             onClick={handleStartCapture}
-            className="w-16 h-16 rounded-full bg-white flex items-center justify-center hover:scale-110 transition disabled:opacity-40"
+            className="w-16 h-16 rounded-full bg-[#2f5d50] flex items-center justify-center hover:scale-105 transition disabled:opacity-40"
           >
-            <div className="w-6 h-6 bg-red-500 rounded-full"/>
+            <div className="w-5 h-5 bg-white rounded-full" />
           </button>
         )}
       </div>
     )}
 
-    {/* Analysis Result */}
+    {/* Result */}
     {analysisResult && (
-      <div className="bg-white/5 border border-white/10 rounded-xl p-6">
+      <div className="bg-white p-6 rounded-2xl shadow-sm">
 
-        <h2 className="text-xl font-semibold text-white mb-3">
+        <h2 className="text-lg font-semibold text-gray-900 mb-2">
           Emotion Analysis
         </h2>
 
-        <p className="text-gray-300 mb-4">
+        <p className="text-sm text-gray-600 mb-4">
           {analysisResult.summary}
         </p>
 
         {analysisResult.emotion && (
-          <p className="text-blue-400 mb-4">
+          <p className="text-sm text-[#2f5d50] font-medium mb-4">
             Dominant Emotion: {analysisResult.emotion}
           </p>
         )}
 
         <button
           onClick={reset}
-          className="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg"
+          className="bg-[#2f5d50] text-white px-5 py-2 rounded-xl hover:opacity-90"
         >
           Record Again
         </button>
       </div>
     )}
+
   </div>
-)
+);
 }
