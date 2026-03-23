@@ -114,105 +114,102 @@ export default function ProfilePage() {
 
 
   return (
-    <div className="max-w-5xl py-10 mx-auto space-y-8">
+  <div className="max-w-5xl mx-auto space-y-8">
 
-      {/* -------- Profile Header -------- */}
+    {/* Header */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-5">
 
-      <div className="flex items-center gap-6 bg-white p-6 rounded-xl shadow">
+      <div className="w-14 h-14 rounded-full bg-[#eef3f1] flex items-center justify-center">
+        <User2Icon className="text-[#2f5d50]" />
+      </div>
 
-        <div className="w-8 h-10 justify-center relative overflow-hidden ">
-          <User2Icon />
+      <div>
+        <h1 className="text-lg font-semibold text-gray-900">
+          {user?.full_name || "User"}
+        </h1>
+
+        <p className="text-sm text-gray-500">
+          {user?.email}
+        </p>
+
+        <div className="flex gap-4 text-xs text-gray-400 mt-1">
+          <span className="flex items-center gap-1">
+            <MapPin size={12} /> India
+          </span>
+          <span className="flex items-center gap-1">
+            <Calendar size={12} /> Member
+          </span>
         </div>
+      </div>
 
-        <div className="flex flex-col gap-0.5">
-          <h1 className="text-xl font-bold text-gray-900">
-            {user?.full_name || "User"}
-          </h1>
+    </div>
 
-          <p className="text-sm text-gray-500">{user?.email}</p>
+    {/* Link Doctor */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm">
+      <h2 className="font-medium mb-4">Link Doctor</h2>
 
-          <div className="flex gap-4 text-sm text-gray-500 mt-1">
+      <div className="flex gap-3">
+        <input
+          type="text"
+          placeholder="Enter Doctor ID"
+          value={doctorId}
+          onChange={(e) => setDoctorId(e.target.value)}
+          className="flex-1 bg-gray-100 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-[#2f5d50]"
+        />
 
-            <span className="flex items-center gap-1">
-              <MapPin size={14} /> India
-            </span>
+        <button
+          onClick={async () => {
+            const email = user?.email;
 
-            <span className="flex items-center gap-1">
-              <Calendar size={14} /> Member
-            </span>
+            const res = await fetch("/api/link-doctor", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                doctor_id: doctorId,
+                patient_email: email,
+              }),
+            });
 
+            const data = await res.json();
+
+            if (data.success) {
+              alert("Doctor linked successfully");
+            } else {
+              alert(data.message);
+            }
+          }}
+          className="bg-[#2f5d50] text-white px-5 rounded-xl hover:opacity-90"
+        >
+          Link
+        </button>
+      </div>
+    </div>
+
+    {/* Stats */}
+    <div className="grid md:grid-cols-3 gap-6">
+      {stats.map((stat, i) => (
+        <div
+          key={i}
+          className="bg-white p-5 rounded-2xl shadow-sm flex items-center gap-4"
+        >
+          <div className="p-3 rounded-xl bg-[#eef3f1]">
+            <stat.icon className="text-[#2f5d50]" />
+          </div>
+
+          <div>
+            <p className="text-lg font-semibold text-gray-900">
+              {stat.value}
+            </p>
+            <p className="text-sm text-gray-500">
+              {stat.label}
+            </p>
           </div>
         </div>
+      ))}
+    </div>
 
-      </div>
-
-
-      {/* Link Doctor */}
-      <div className="bg-white p-6 rounded-xl shadow">
-        <h2 className="font-semibold mb-4">Link Doctor</h2>
-
-        <div className="flex gap-3">
-          <input
-            type="text"
-            placeholder="Enter Doctor ID"
-            value={doctorId}
-            onChange={(e) => setDoctorId(e.target.value)}
-            className="border px-3 py-2 rounded-lg flex-1"
-          />
-
-          <button
-            onClick={async () => {
-              const email = user?.email;
-
-              const res = await fetch("/api/link-doctor", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  doctor_id: doctorId,
-                  patient_email: email,
-                }),
-              });
-
-              const data = await res.json();
-
-              if (data.success) {
-                alert("Doctor linked successfully");
-              } else {
-                alert(data.message);
-              }
-            }}
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg"
-          >
-            Link
-          </button>
-        </div>
-      </div>
-
-      {/* -------- Stats -------- */}
-
-      <div className="grid md:grid-cols-3 gap-6">
-
-        {stats.map((stat, i) => (
-          <div
-            key={i}
-            className="bg-white p-6 rounded-xl shadow flex items-center gap-4"
-          >
-
-            <stat.icon className="text-blue-600" />
-
-            <div>
-              <p className="text-xl font-bold">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
-            </div>
-
-          </div>
-        ))}
-
-      </div>
-
-      {/* -------- Mental Health Chart -------- */}
-
-      <div className="bg-white p-6 rounded-xl shadow">
+    {/* Chart */}
+    <div className="bg-white p-6 rounded-xl shadow">
 
         <div className="flex items-center gap-2 mb-6">
           <TrendingUp className="text-blue-600" />
@@ -283,32 +280,31 @@ export default function ProfilePage() {
         )}
       </div>
 
-      {/* -------- Severity Legend -------- */}
+    {/* Legend */}
+    <div className="bg-white p-4 rounded-2xl shadow-sm flex flex-wrap gap-5 text-xs text-gray-600">
 
-      <div className="bg-white p-4 rounded-xl shadow text-sm flex gap-6">
+      <span className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-green-400 rounded"></div> Minimal
+      </span>
 
-        <span className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded"></div> Minimal
-        </span>
+      <span className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-blue-400 rounded"></div> Mild
+      </span>
 
-        <span className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-blue-500 rounded"></div> Mild
-        </span>
+      <span className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-yellow-400 rounded"></div> Moderate
+      </span>
 
-        <span className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-yellow-500 rounded"></div> Moderate
-        </span>
+      <span className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-orange-400 rounded"></div> Severe
+      </span>
 
-        <span className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-orange-500 rounded"></div> Severe
-        </span>
-
-        <span className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-red-500 rounded"></div> Very Severe
-        </span>
-
-      </div>
+      <span className="flex items-center gap-2">
+        <div className="w-3 h-3 bg-red-400 rounded"></div> Very Severe
+      </span>
 
     </div>
-  );
+
+  </div>
+);
 }
