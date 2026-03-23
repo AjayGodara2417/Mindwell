@@ -56,81 +56,76 @@ export default function Settings() {
   }
 
   return (
-    <div className="max-w-4xl py-10 mx-auto space-y-8">
+  <div className="max-w-4xl mx-auto space-y-8">
 
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="text-gray-500">Manage your account</p>
+    <div>
+      <h1 className="text-3xl font-semibold">Settings</h1>
+      <p className="text-gray-500 text-sm">
+        Manage your account preferences
+      </p>
+    </div>
+
+    {/* Account */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-4">
+
+      <h2 className="font-medium">Account</h2>
+
+      <div className="bg-gray-100 px-4 py-3 rounded-xl text-sm">
+        {user?.email}
       </div>
 
-      {/* Account */}
-      <div className="bg-white p-6 rounded-xl shadow-sm space-y-6">
-
-        <div className="flex items-center gap-2 font-semibold">
-          <User size={18} /> Account
-        </div>
-
-        <div className="flex justify-between">
-          <div>
-            <p className="font-medium">Full Name</p>
-            <p className="text-gray-500 text-sm">
-              {user?.full_name}
-            </p>
-          </div>
-
-        </div>
-
-        <div className="flex justify-between">
-          <div>
-            <p className="font-medium">Email</p>
-            <p className="text-gray-500 text-sm">
-              {user?.email}
-            </p>
-          </div>
-
-        </div>
-
+      <div className="grid grid-cols-2 gap-4">
+        <input
+          value={user?.full_name?.split(" ")[0] || ""}
+          className="bg-gray-100 px-4 py-2 rounded-xl"
+        />
+        <input
+          value={user?.full_name?.split(" ")[1] || ""}
+          className="bg-gray-100 px-4 py-2 rounded-xl"
+        />
       </div>
 
-      {/* Security */}
-      <div className="bg-white p-6 rounded-xl shadow-sm">
+      <button
+        onClick={() => setShowModal(true)}
+        className="text-[#2f5d50] text-sm"
+      >
+        Change Password
+      </button>
+    </div>
 
-        <div className="flex items-center gap-2 font-semibold mb-4">
-          <Shield size={18} /> Security
-        </div>
+    {/* Security */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm">
+      <h2 className="font-medium mb-2">Security</h2>
 
-        <button
-          onClick={() => setShowModal(true)}
-          className="flex items-center gap-2 text-blue-600"
-        >
-          <Lock size={16} />
-          Change Password
-        </button>
+      <p className="text-sm text-gray-500">
+        Keep your account secure.
+      </p>
+    </div>
 
-      </div>
-
-      {/* Sign Out */}
+    {/* Logout */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
+      <p className="font-medium">Ready to leave?</p>
 
       <button
         onClick={() => {
           localStorage.clear();
           window.location.href = "/login";
         }}
-        className="border border-red-300 text-red-600 px-5 py-2 rounded-lg hover:bg-red-50 flex items-center gap-2"
+        className="mt-4 bg-red-500 text-white px-6 py-2 rounded-full"
       >
-        <LogOut size={16} />
         Sign Out
       </button>
-
-      {showModal && (
-        <ChangePasswordModal
-          email={user?.email || localStorage.getItem("userEmail") || ""}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
     </div>
-  );
+
+    {showModal && (
+      <ChangePasswordModal
+        email={user?.email || ""}
+        onClose={() => setShowModal(false)}
+      />
+    )}
+
+  </div>
+);
 }
 
 
