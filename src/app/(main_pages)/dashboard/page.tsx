@@ -1,211 +1,310 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { TrendingUp } from "lucide-react";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 
-const questions = [
-  { id: 1, question: "I feel sad or empty most of the day." },
-  { id: 2, question: "I have lost interest in activities I used to enjoy." },
-  { id: 3, question: "I have trouble falling asleep or staying asleep." },
-  { id: 4, question: "I feel tired or have little energy." },
-  { id: 5, question: "I have changes in my appetite or weight." },
-  { id: 6, question: "I feel worthless or guilty." },
-  { id: 7, question: "I have trouble concentrating or making decisions." },
-  { id: 8, question: "I feel restless or slowed down." },
-  { id: 9, question: "I have thoughts of death or suicide." },
-  { id: 10, question: "I feel anxious or worried." },
-  { id: 11, question: "I get irritated easily." },
-  { id: 12, question: "I feel hopeless about the future." },
-  { id: 13, question: "I isolate myself from friends and family." },
-  { id: 14, question: "I feel overwhelmed by daily tasks." },
-  { id: 15, question: "I have physical aches or pains without clear cause." },
-  { id: 16, question: "I feel like crying for no reason." },
-  { id: 17, question: "I have trouble getting out of bed." },
-  { id: 18, question: "I feel like a failure." },
-  { id: 19, question: "I criticize myself constantly." },
-  { id: 20, question: "I feel lonely even when with others." },
-  { id: 21, question: "I have no motivation to do anything." },
-  { id: 22, question: "I feel like a burden to others." },
-  { id: 23, question: "I have trouble enjoying food." },
-  { id: 24, question: "I feel numb or empty." },
-  { id: 25, question: "I feel like life is not worth living." },
-];
+type Assessment = {
+  score: number;
+  severity: string;
+  created_at: string;
+};
 
-const options = [
-  { label: "Never", value: 0 },
-  { label: "Sometimes", value: 1 },
-  { label: "Often", value: 2 },
-  { label: "Always", value: 3 },
-];
+type SleepEntry = {
+  hours: number;
+  created_at: string;
+};
 
-export default function DashboardPage() {
+export default function Stats() {
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [sleepData, setSleepData] = useState<SleepEntry[]>([]);
+  const [sleepHours, setSleepHours] = useState("");
+  const [loading, setLoading] = useState(true);
 
-  const router = useRouter();
+  /* ---------------- FETCH DATA ---------------- */
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("token");
 
-  const [current, setCurrent] = useState(0);
+        const profileRes = await fetch("/api/profile", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    Array(questions.length).fill(null)
-  );
+        const profile = await profileRes.json();
 
-  const progress = Math.round(((current + 1) / questions.length) * 100);
-
-  const handleAnswer = async (value: number) => {
-
-    const updated = [...answers];
-    updated[current] = value;
-    setAnswers(updated);
-
-    setTimeout(async () => {
-
-      if (current < questions.length - 1) {
-        setCurrent((prev) => prev + 1);
-      } else {
-
-        const totalScore = updated.reduce(
-          (sum: number, val) => (sum ?? 0) + (val ?? 0),
-          0
+        // Assessments
+        const assessRes = await fetch(
+          `/api/assessment?email=${profile.email}`
         );
+        const assessData = await assessRes.json();
 
-        const percentage = Math.round(((totalScore ?? 0) / 75) * 100);
-
-        const email = localStorage.getItem("userEmail");
-
-        try {
-          await fetch("/api/assessment", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email,
-              score: totalScore,
-              percentage,
-            }),
-          });
-        } catch (error) {
-          console.error(error);
+        if (assessData.success) {
+          setAssessments(assessData.history);
         }
 
-        router.push(`/result-dashboard?score=${totalScore}`);
+        // Sleep
+        const sleepRes = await fetch(
+          `/api/sleep?email=${profile.email}`
+        );
+        const sleepJson = await sleepRes.json();
+
+        if (sleepJson.success) {
+          setSleepData(sleepJson.data);
+        }
+      } catch (err) {
+        console.error(err);
       }
 
-    }, 300);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, []);
+
+  /* ---------------- SAVE SLEEP ---------------- */
+  const saveSleep = async () => {
+    if (!sleepHours) return;
+
+    const token = localStorage.getItem("token");
+
+    const profileRes = await fetch("/api/profile", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    const profile = await profileRes.json();
+
+    await fetch("/api/sleep", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: profile.email,
+        hours: Number(sleepHours),
+      }),
+    });
+
+    setSleepHours("");
+
+    // Refresh sleep data
+    const res = await fetch(`/api/sleep?email=${profile.email}`);
+    const data = await res.json();
+
+    if (data.success) {
+      setSleepData(data.data);
+    }
   };
 
-  const prevQuestion = () => {
-    if (current > 0) setCurrent(current - 1);
-  };
+  /* ---------------- LOADING ---------------- */
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-gray-500">
+        Loading stats...
+      </div>
+    );
+  }
+
+  const latest = assessments[assessments.length - 1];
+
+  /* ---------------- CHART DATA ---------------- */
+  const mentalChartData = assessments.map((item) => ({
+    score: item.score,
+    date: new Date(item.created_at).toISOString(), // UNIQUE
+  }));
+
+  const sleepChartData = sleepData.map((item) => ({
+    hours: item.hours,
+    date: new Date(item.created_at).toISOString(), // UNIQUE
+  }));
 
   return (
-    <div className="flex justify-center h-full items-center w-full bg-gray-100">
+  <div className="max-w-6xl mx-auto space-y-10">
 
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-lg border border-gray-200 p-10">
+    {/* Header */}
+    <div>
+      <h1 className="text-2xl font-semibold text-gray-900">
+        Your Health Stats
+      </h1>
+      <p className="text-sm text-gray-500 mt-1">
+        Track your progress and monitor your wellbeing
+      </p>
+    </div>
 
-        {/* Question indicator */}
-        <div className="flex flex-wrap gap-2 mb-6">
+    {/* Latest Result */}
+    {latest && (
+      <div>
+        <div className="bg-white p-6 rounded-2xl shadow-sm max-w-sm">
 
-          {questions.map((_, index) => {
+          <p className="text-xs text-gray-500 mb-2">
+            Latest Assessment
+          </p>
 
-            const answered = answers[index] !== null;
+          <div className="text-4xl font-semibold text-[#2f5d50]">
+            {latest.score}
+          </div>
 
-            return (
-              <div
-                key={index}
-                className={`w-3 h-3 rounded-full
-                ${
-                  index === current
-                    ? "bg-blue-600"
-                    : answered
-                    ? "bg-green-500"
-                    : "bg-gray-300"
-                }`}
-              />
-            );
-          })}
+          <p className="text-sm text-gray-500 mt-1">
+            Severity:{" "}
+            <span className="font-medium text-gray-800">
+              {latest.severity}
+            </span>
+          </p>
 
-        </div>
-
-        {/* Header */}
-        <div className="flex justify-between text-sm text-gray-500 mb-2">
-          <span>
-            Question {current + 1} of {questions.length}
-          </span>
-          <span>{progress}% Completed</span>
-        </div>
-
-        {/* Animated progress */}
-        <div className="w-full h-2 bg-gray-200 rounded mb-8 overflow-hidden">
-          <div
-            className="h-2 bg-blue-600 transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Question */}
-        <h2 className="text-2xl font-semibold text-gray-800 mb-8">
-          {questions[current].question}
-        </h2>
-
-        {/* Options */}
-        <div className="space-y-4 mb-10">
-
-          {options.map((option) => {
-
-            const selected = answers[current] === option.value;
-
-            return (
-              <button
-                key={option.label}
-                onClick={() => handleAnswer(option.value)}
-                className={`w-full flex justify-between items-center p-5 rounded-xl border transition
-                ${
-                  selected
-                    ? "border-blue-600 bg-blue-50"
-                    : "border-gray-200 hover:border-blue-400 hover:bg-gray-50"
-                }`}
-              >
-
-                <span className="text-gray-700 text-lg">
-                  {option.label}
-                </span>
-
-                <div
-                  className={`w-5 h-5 rounded-full border flex items-center justify-center
-                  ${
-                    selected
-                      ? "border-blue-600 bg-blue-600"
-                      : "border-gray-300"
-                  }`}
-                />
-
-              </button>
-            );
-          })}
-
-        </div>
-
-        {/* Navigation */}
-        <div className="flex justify-between">
-
-          <button
-            onClick={prevQuestion}
-            disabled={current === 0}
-            className="flex items-center gap-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
-          >
-            <ArrowLeft size={18} />
-            Previous
-          </button>
-
-          <div className="text-gray-400 text-sm">
-            Select an option to continue
+          <div className="mt-4 h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-2 bg-[#2f5d50]"
+              style={{
+                width: `${(latest.score / 75) * 100}%`,
+              }}
+            />
           </div>
 
         </div>
+      </div>
+    )}
 
+    {/* Sleep Tracker */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm space-y-6">
+
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-lg font-medium text-gray-900">
+            Sleep Tracker
+          </h2>
+          <p className="text-sm text-gray-500">
+            Monitor your sleep patterns
+          </p>
+        </div>
+
+        {sleepData.length > 0 && (
+          <div className="text-right">
+            <p className="text-xs text-gray-400">Last Night</p>
+            <p className="text-sm font-medium text-gray-900">
+              {sleepData[sleepData.length - 1].hours} hrs
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Input */}
+      <div className="flex gap-3">
+        <input
+          type="number"
+          placeholder="e.g. 7.5"
+          value={sleepHours}
+          onChange={(e) => setSleepHours(e.target.value)}
+          className="flex-1 bg-gray-100 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-[#2f5d50]"
+        />
+
+        <button
+          onClick={saveSleep}
+          className="bg-[#2f5d50] text-white px-5 rounded-xl hover:opacity-90"
+        >
+          Save
+        </button>
+      </div>
+
+      {/* Chart */}
+      <div className="w-full h-72">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={sleepChartData}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) =>
+                new Date(value).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })
+              }
+              tick={{ fontSize: 12 }}
+            />
+
+            <YAxis domain={[0, 12]} tick={{ fontSize: 12 }} />
+
+            <Tooltip
+              labelFormatter={(value) =>
+                new Date(value).toLocaleString()
+              }
+            />
+
+            <Line
+              type="monotone"
+              dataKey="hours"
+              stroke="#2f5d50"
+              strokeWidth={2}
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
 
     </div>
-  );
+
+    {/* Mental Health Trend */}
+    <div className="bg-white p-6 rounded-2xl shadow-sm">
+
+      <div className="flex items-center gap-2 mb-6">
+        <TrendingUp className="text-[#2f5d50]" />
+        <h2 className="text-lg font-medium text-gray-900">
+          Assessment Trend
+        </h2>
+      </div>
+
+      <div className="w-full h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={mentalChartData}>
+
+            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+            <XAxis
+              dataKey="date"
+              tickFormatter={(value) =>
+                new Date(value).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                })
+              }
+              tick={{ fontSize: 12 }}
+            />
+
+            <YAxis domain={[0, 75]} tick={{ fontSize: 12 }} />
+
+            <Tooltip
+              labelFormatter={(value) =>
+                new Date(value).toLocaleString()
+              }
+            />
+
+            <Line
+              type="monotone"
+              dataKey="score"
+              stroke="#2f5d50"
+              strokeWidth={2}
+              dot={{ r: 4 }}
+              activeDot={{ r: 6 }}
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+    </div>
+
+  </div>
+);
 }
