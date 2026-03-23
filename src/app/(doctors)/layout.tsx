@@ -7,6 +7,8 @@ import {
   User,
   Settings,
   Stethoscope,
+  LogOut,
+  Zap,
 } from "lucide-react";
 
 export default function DoctorLayout({
@@ -23,71 +25,85 @@ export default function DoctorLayout({
       icon: LayoutDashboard,
     },
     {
-      name: "Profile",
-      href: "/doctor-dashboard/doctorProfile",
+      name: "Patient Stats",
+      href: "/doctor-dashboard/patient/demo", // adjust route
       icon: User,
     },
     {
       name: "Settings",
-      href: "/doctor-dashboard/doctorSettings",
+      href: "/doctorsettings",
       icon: Settings,
     },
   ];
 
   return (
-    <div className="flex min-h-full bg-gray-50">
+    <div className="flex min-h-screen bg-[#f6f8f7]">
 
-      {/* Sidebar */}
+      {/* SIDEBAR */}
+      <aside className="w-72 bg-white border-r flex flex-col justify-between h-screen sticky top-0">
 
-      <aside className="w-64 bg-white border-r hidden md:flex flex-col">
+        {/* TOP */}
+        <div>
 
-        {/* Logo */}
+          {/* Logo */}
+          <div className="px-6 pt-8 pb-6">
+            <h2 className="text-xl font-semibold text-gray-800">
+              MindWell
+            </h2>
+            <p className="text-xs text-gray-400 mt-1">
+              The Place to manage your patients
+            </p>
+          </div>
 
-        <div className="p-6 border-b flex items-center gap-2">
-          <Stethoscope className="text-blue-600" />
-          <h2 className="text-xl font-bold text-blue-600">
-            MindWell
-          </h2>
+          {/* Menu */}
+          <nav className="px-4 space-y-2">
+
+            {menu.map((item) => {
+              const Icon = item.icon;
+              const active = pathname === item.href;
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all
+                  ${
+                    active
+                      ? "bg-[#e6f4f1] text-teal-700 font-medium shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100"
+                  }`}
+                >
+                  <Icon size={18} />
+                  {item.name}
+                </Link>
+              );
+            })}
+
+          </nav>
+
         </div>
 
-        {/* Menu */}
+        {/* BOTTOM */}
+        <div className="p-4 space-y-4">
 
-        <nav className="flex-1 p-4 space-y-2">
+          {/* Logout */}
+          <button className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-emerald-400 text-white py-3 rounded-xl shadow-md hover:opacity-90 transition">
+            <LogOut size={16} />
+            Sign Out
+          </button>
 
-          {menu.map((item) => {
-            const Icon = item.icon;
-            const active = pathname === item.href;
+          {/* Sign out */}
+          <button className="w-full flex items-center gap-2 text-gray-500 hover:text-red-500 transition text-sm">
+            
+            
+          </button>
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center gap-3 p-3 rounded-lg transition
-                ${
-                  active
-                    ? "bg-blue-50 text-blue-600 font-medium"
-                    : "text-gray-600 hover:bg-gray-100"
-                }`}
-              >
-                <Icon size={18} />
-                {item.name}
-              </Link>
-            );
-          })}
-
-        </nav>
-
-        {/* Footer */}
-
-        <div className="p-4 border-t text-xs text-gray-400">
-          Doctor Panel v1.0
         </div>
 
       </aside>
 
-      {/* Main Content */}
-
-      <main className="flex-1 px-10">
+      {/* MAIN */}
+      <main className="flex-1 px-6 md:px-10 py-8">
         {children}
       </main>
 
