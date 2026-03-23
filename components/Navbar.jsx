@@ -4,6 +4,36 @@ import Link from "next/link";
 
 export default function Navbar() {
   return (
+    <div className="flex justify-between items-center px-8 py-4 bg-white shadow-sm">
+      <h1 className="text-lg font-semibold text-green-700">MindWell</h1>
+      <div className="flex gap-6 text-sm text-gray-600">
+        <Link href="#" className="hover:text-gray-900">
+            About
+          </Link>
+          <Link href="#" className="hover:text-gray-900">
+            Features
+          </Link>
+          <Link href="#" className="hover:text-gray-900">
+            Resources
+          </Link>
+      </div>
+      <div className="flex gap-4">
+        <Link
+            href="/signup"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+          >
+            Sign Up
+          </Link>
+          <Link
+            href="/login"
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition"
+          >
+            Log In
+          </Link>
+      </div>
+    </div>
+  );
+  return (
     <nav className="w-full border-b bg-white">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         

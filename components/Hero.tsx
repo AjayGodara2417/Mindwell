@@ -1,44 +1,69 @@
+"use client";
+
 import Image from "next/image";
+import { motion } from "framer-motion";
 
 export default function Hero() {
   return (
-    <section className="w-full bg-[#f3f4f6]">
-      <div className="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-12 items-center">
-        
-        {/* Left Content */}
-        <div>
-          <h1 className="text-5xl md:text-6xl font-bold leading-tight text-[#0f172a]">
-            Find Your <br />
-            Balance, <br />
-            <span className="text-blue-600">Together.</span>
+    <section className="relative py-24 overflow-hidden">
+
+      {/* Background Glow */}
+      <div className="absolute -top-32 -left-32 w-[400px] h-[400px] bg-blue-500/20 blur-[120px]" />
+      <div className="absolute -bottom-32 -right-32 w-[400px] h-[400px] bg-indigo-400/20 blur-[120px]" />
+
+      <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
+
+        {/* LEFT */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <span className="inline-block text-xs bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium">
+            YOUR SAFE SPACE
+          </span>
+
+          <h1 className="mt-6 text-5xl md:text-6xl font-bold leading-tight text-gray-900">
+            Build a calmer,{" "}
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-500 text-transparent bg-clip-text">
+              healthier mind
+            </span>
           </h1>
 
-          <p className="mt-6 text-lg text-gray-600 max-w-xl">
-            Empowering patients to manage their mental health and doctors
-            to provide better care with data-driven insights.
+          <p className="mt-6 text-gray-600 text-lg max-w-lg">
+            Track emotions, gain insights, and connect with experts — all in one peaceful digital space.
           </p>
 
-          {/* Buttons */}
-          <div className="mt-8 flex flex-wrap gap-4">
-            <button className="bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold shadow-md hover:bg-blue-700 transition">
-              Join as Patient
+          <div className="mt-8 flex gap-4">
+            <button className="bg-gradient-to-r from-blue-600 to-indigo-500 text-white px-6 py-3 rounded-xl shadow-lg hover:scale-105 transition">
+              Start Journey →
             </button>
 
-            <button className="bg-gray-200 text-gray-800 px-6 py-3 rounded-xl font-semibold hover:bg-gray-300 transition">
-              Join as a Doctor
+            <button className="px-6 py-3 rounded-xl border border-gray-200 hover:bg-gray-50 transition">
+              Take Tour
             </button>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Right Image */}
-        <div className="relative w-full h-105 rounded-2xl overflow-hidden">
-          <Image
-            src="/hero-image.jpg"
-            alt="Meditation"
-            fill
-            className="object-cover"
-          />
-        </div>
+        {/* RIGHT */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="relative"
+        >
+          <div className="rounded-3xl overflow-hidden shadow-2xl border">
+            <Image
+              src="/hero-image.jpg"
+              alt="Mental wellness"
+              width={500}
+              height={400}
+            />
+          </div>
+
+          {/* Floating Card */}
+          <div className="absolute bottom-6 left-6 bg-white/80 backdrop-blur-md px-4 py-3 rounded-xl shadow-lg text-sm">
+            ❤️ 1,240+ users improving daily
+          </div>
+        </motion.div>
 
       </div>
     </section>
