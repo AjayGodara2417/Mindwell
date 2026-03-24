@@ -64,43 +64,27 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
-
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
-
+    const email = req.nextUrl.searchParams.get("email");
     if (!email) {
-      return NextResponse.json(
-        { success: false, message: "Email required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, message: "Email required" }, { status: 400 });
     }
 
+    // Get latest 10 (newest first), then reverse to return oldest->newest
     const [rows]: any = await db.query(
-      `SELECT 
-        score,
-        percentage,
-        severity,
-        created_at
+      `SELECT score, percentage, severity, created_at
        FROM assessments
        WHERE patient_email = ?
-       ORDER BY created_at ASC
+       ORDER BY created_at DESC
        LIMIT 10`,
       [email]
     );
 
-    return NextResponse.json({
-      success: true,
-      history: rows
-    });
+    // rows is newest->oldest; reverse to oldest->newest for chart plotting
+    const history = Array.isArray(rows) ? rows.reverse() : [];
 
+    return NextResponse.json({ success: true, history });
   } catch (error) {
-
     console.error("Assessment Fetch Error:", error);
-
-    return NextResponse.json(
-      { success: false, message: "Failed to fetch assessments" },
-      { status: 500 }
-    );
-
+    return NextResponse.json({ success: false, message: "Failed to fetch assessments" }, { status: 500 });
   }
 }
