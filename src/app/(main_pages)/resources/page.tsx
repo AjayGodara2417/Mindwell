@@ -48,7 +48,7 @@ export default function ResourcesPage() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12">
+    <div className="max-w-6xl mx-auto space-y-12 p-8">
 
       {/* Header */}
       <div>

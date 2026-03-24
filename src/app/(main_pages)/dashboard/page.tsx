@@ -106,7 +106,7 @@ export default function Stats() {
   }
 
   return (
-    <div className="bg-[#f6f8f7]">
+    <div className="bg-[#f6f8f7] p-8">
       <div className="max-w-7xl mx-auto space-y-6">
 
         {/* HEADER */}
