@@ -22,6 +22,39 @@ type TasksState = {
   monthly: Task[];
 };
 
+const suggestedTasks = [
+  {
+    id: 1,
+    text: "Go for a 10-minute walk outdoors",
+    tag: "Mood Booster",
+  },
+  {
+    id: 2,
+    text: "Write down 3 things you're grateful for",
+    tag: "Gratitude",
+  },
+  {
+    id: 3,
+    text: "Practice deep breathing for 5 minutes",
+    tag: "Relaxation",
+  },
+  {
+    id: 4,
+    text: "Avoid social media for 1 hour",
+    tag: "Detox",
+  },
+  {
+    id: 5,
+    text: "Talk to a friend or family member",
+    tag: "Connection",
+  },
+  {
+    id: 6,
+    text: "Listen to calming music",
+    tag: "Stress Relief",
+  },
+];
+
 export default function PlannerPage() {
   const [tasks, setTasks] = useState<TasksState>({
     daily: [],
@@ -125,126 +158,170 @@ export default function PlannerPage() {
     fetchTasks();
   };
 
+  const addSuggestedTask = async (text: string) => {
+    await fetch("/api/tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        text,
+        type: "daily", // always daily
+      }),
+    });
+
+    fetchTasks();
+  };
+
   const completedCount = tasks[activeTab].filter((t) => t.completed).length;
   const totalCount = tasks[activeTab].length;
   const progress = totalCount ? (completedCount / totalCount) * 100 : 0;
 
   return (
-  <div className="min-h-full bg-[#f6f8f7] p-8">
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-full bg-[#f6f8f7] p-8">
+      <div className="max-w-4xl mx-auto space-y-6">
 
-      {/* Header */}
-      <div className="flex items-center gap-2">
-        <Calendar className="text-[#2f5d50]" />
-        <h1 className="text-2xl font-semibold text-gray-900">
-          Planner
-        </h1>
-      </div>
+        {/* Header */}
+        <div className="flex items-center gap-2">
+          <Calendar className="text-[#2f5d50]" />
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Planner
+          </h1>
+        </div>
 
-      {/* Tabs */}
-      <div className="flex gap-2 bg-[#eef3f1] p-1 rounded-xl w-fit">
-        {(["daily", "weekly", "monthly"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm rounded-lg capitalize transition
-              ${
-                activeTab === tab
+        {/* Tabs */}
+        <div className="flex gap-2 bg-[#eef3f1] p-1 rounded-xl w-fit">
+          {(["daily", "weekly", "monthly"] as const).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm rounded-lg capitalize transition
+              ${activeTab === tab
                   ? "bg-white text-[#2f5d50] shadow-sm"
                   : "text-gray-600 hover:text-gray-900"
-              }
-            `}
-          >
-            {tab}
-          </button>
-        ))}
-      </div>
-
-      {/* Input */}
-      <div className="flex gap-3">
-        <input
-          value={taskInput}
-          onChange={(e) => setTaskInput(e.target.value)}
-          placeholder="Add a task..."
-          className="flex-1 bg-white px-4 py-3 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-[#2f5d50]"
-        />
-
-        <button
-          onClick={addTask}
-          className="bg-[#2f5d50] text-white px-5 rounded-xl flex items-center justify-center hover:opacity-90"
-        >
-          <Plus size={18} />
-        </button>
-      </div>
-
-      {/* Progress */}
-      {totalCount > 0 && (
-        <div className="bg-white p-4 rounded-2xl shadow-sm">
-          <div className="flex justify-between text-xs text-gray-500 mb-2">
-            <span>Progress</span>
-            <span>{Math.round(progress)}%</span>
-          </div>
-
-          <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
-            <div
-              className="bg-[#2f5d50] h-2 rounded-full transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Tasks */}
-      <div className="space-y-3">
-        {tasks[activeTab].map((task) => (
-          <div
-            key={task.id}
-            className="flex justify-between items-center bg-white px-4 py-3 rounded-2xl shadow-sm hover:shadow-md transition"
-          >
-            <div
-              onClick={() => toggleTask(task)}
-              className="flex items-center gap-3 cursor-pointer"
-            >
-              <CheckCircle
-                className={
-                  task.completed
-                    ? "text-green-500"
-                    : "text-gray-300"
                 }
-              />
+            `}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
 
-              <span
-                className={`text-sm ${
-                  task.completed
-                    ? "line-through text-gray-400"
-                    : "text-gray-800"
-                }`}
-              >
-                {task.text}
-              </span>
+        {/* Input */}
+        <div className="flex gap-3">
+          <input
+            value={taskInput}
+            onChange={(e) => setTaskInput(e.target.value)}
+            placeholder="Add a task..."
+            className="flex-1 bg-white px-4 py-3 rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-[#2f5d50]"
+          />
+
+          <button
+            onClick={addTask}
+            className="bg-[#2f5d50] text-white px-5 rounded-xl flex items-center justify-center hover:opacity-90"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        {/* Progress */}
+        {totalCount > 0 && (
+          <div className="bg-white p-4 rounded-2xl shadow-sm">
+            <div className="flex justify-between text-xs text-gray-500 mb-2">
+              <span>Progress</span>
+              <span>{Math.round(progress)}%</span>
             </div>
 
-            <button
-              onClick={() => deleteTask(task.id)}
-              className="text-gray-400 hover:text-red-500 transition"
+            <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-[#2f5d50] h-2 rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Tasks */}
+        <div className="space-y-3">
+          {tasks[activeTab].map((task) => (
+            <div
+              key={task.id}
+              className="flex justify-between items-center bg-white px-4 py-3 rounded-2xl shadow-sm hover:shadow-md transition"
             >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        ))}
-      </div>
+              <div
+                onClick={() => toggleTask(task)}
+                className="flex items-center gap-3 cursor-pointer"
+              >
+                <CheckCircle
+                  className={
+                    task.completed
+                      ? "text-green-500"
+                      : "text-gray-300"
+                  }
+                />
 
-      {/* Empty State */}
-      {tasks[activeTab].length === 0 && (
-        <div className="text-center mt-16 text-gray-400 flex flex-col items-center gap-2">
-          <div className="w-14 h-14 rounded-full bg-[#eef3f1] flex items-center justify-center">
-            <Trophy className="text-[#2f5d50]" />
-          </div>
-          <p className="text-sm">No tasks yet</p>
+                <span
+                  className={`text-sm ${task.completed
+                      ? "line-through text-gray-400"
+                      : "text-gray-800"
+                    }`}
+                >
+                  {task.text}
+                </span>
+              </div>
+
+              <button
+                onClick={() => deleteTask(task.id)}
+                className="text-gray-400 hover:text-red-500 transition"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ))}
         </div>
-      )}
 
+        {/* Empty State */}
+        {tasks[activeTab].length === 0 && (
+          <div className="text-center mt-16 text-gray-400 flex flex-col items-center gap-2">
+            <div className="w-14 h-14 rounded-full bg-[#eef3f1] flex items-center justify-center">
+              <Trophy className="text-[#2f5d50]" />
+            </div>
+            <p className="text-sm">No tasks yet</p>
+          </div>
+        )}
+
+      </div>
+      {/* SUGGESTED TASKS */}
+      <div className="mt-10">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+          Suggested for You
+        </h2>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          {suggestedTasks.map((task) => (
+            <div
+              key={task.id}
+              className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md transition flex justify-between items-start"
+            >
+              <div>
+                <p className="text-sm text-gray-800 font-medium">
+                  {task.text}
+                </p>
+
+                <span className="text-xs text-[#2f5d50] bg-[#eef3f1] px-2 py-1 rounded-full mt-2 inline-block">
+                  {task.tag}
+                </span>
+              </div>
+
+              <button
+                onClick={() => addSuggestedTask(task.text)}
+                className="bg-[#2f5d50] text-white p-2 rounded-lg hover:scale-105 transition"
+              >
+                <Plus size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
-  </div>
-);
+  );
 }
