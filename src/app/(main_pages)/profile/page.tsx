@@ -9,13 +9,13 @@ import {
   Award,
   User2Icon,
 } from "lucide-react";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 export default function ProfilePage() {
 
   type User = {
     full_name?: string;
     email?: string;
-    // Add other fields as needed
   };
 
   type Assessment = {
@@ -23,7 +23,6 @@ export default function ProfilePage() {
     severity: string;
     percentage: number;
     created_at: string;
-    // Add other fields as needed
   };
 
   const [user, setUser] = useState<User | null>(null);
@@ -110,201 +109,201 @@ export default function ProfilePage() {
     },
   ];
 
-  const maxScore = Math.max(...assessments.map((a) => a.score), 75); // 75 = max possible score
+  const chartData = assessments.map((item) => {
+    const dateObj = new Date(item.created_at);
+
+    return {
+      score: Number(item.score),
+      timestamp: dateObj.getTime(), // ✅ REAL VALUE (fixes hover)
+      date: dateObj.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      }),
+      fullDate: dateObj.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      }),
+      severity: item.severity,
+    };
+  });
+
 
 
   return (
-  <div className="max-w-5xl mx-auto py-8 space-y-8">
+    <div className="bg-[#f6f8f7] min-h-screen p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
 
-    {/* Header */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-5">
+        {/* HEADER GRID */}
+        <div className="grid md:grid-cols-2 gap-6">
 
-      <div className="w-14 h-14 rounded-full bg-[#eef3f1] flex items-center justify-center">
-        <User2Icon className="text-[#2f5d50]" />
-      </div>
+          {/* PROFILE CARD */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm flex items-center gap-5">
 
-      <div>
-        <h1 className="text-lg font-semibold text-gray-900">
-          {user?.full_name || "User"}
-        </h1>
+            <div className="w-16 h-16 rounded-xl bg-[#eef3f1] flex items-center justify-center">
+              <User2Icon className="text-[#2f5d50]" size={28} />
+            </div>
 
-        <p className="text-sm text-gray-500">
-          {user?.email}
-        </p>
+            <div>
+              <h1 className="text-lg font-semibold text-gray-900">
+                {user?.full_name || "User"}
+              </h1>
 
-        <div className="flex gap-4 text-xs text-gray-400 mt-1">
-          <span className="flex items-center gap-1">
-            <MapPin size={12} /> India
-          </span>
-          <span className="flex items-center gap-1">
-            <Calendar size={12} /> Member
-          </span>
-        </div>
-      </div>
+              <p className="text-sm text-gray-500">
+                {user?.email}
+              </p>
 
-    </div>
-
-    {/* Link Doctor */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm">
-      <h2 className="font-medium mb-4">Link Doctor</h2>
-
-      <div className="flex gap-3">
-        <input
-          type="text"
-          placeholder="Enter Doctor ID"
-          value={doctorId}
-          onChange={(e) => setDoctorId(e.target.value)}
-          className="flex-1 bg-gray-100 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-[#2f5d50]"
-        />
-
-        <button
-          onClick={async () => {
-            const email = user?.email;
-
-            const res = await fetch("/api/link-doctor", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                doctor_id: doctorId,
-                patient_email: email,
-              }),
-            });
-
-            const data = await res.json();
-
-            if (data.success) {
-              alert("Doctor linked successfully");
-            } else {
-              alert(data.message);
-            }
-          }}
-          className="bg-[#2f5d50] text-white px-5 rounded-xl hover:opacity-90"
-        >
-          Link
-        </button>
-      </div>
-    </div>
-
-    {/* Stats */}
-    <div className="grid md:grid-cols-3 gap-6">
-      {stats.map((stat, i) => (
-        <div
-          key={i}
-          className="bg-white p-5 rounded-2xl shadow-sm flex items-center gap-4"
-        >
-          <div className="p-3 rounded-xl bg-[#eef3f1]">
-            <stat.icon className="text-[#2f5d50]" />
-          </div>
-
-          <div>
-            <p className="text-lg font-semibold text-gray-900">
-              {stat.value}
-            </p>
-            <p className="text-sm text-gray-500">
-              {stat.label}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-
-    {/* Chart */}
-    <div className="bg-white p-6 rounded-xl shadow">
-
-        <div className="flex items-center gap-2 mb-6">
-          <TrendingUp className="text-blue-600" />
-          <h2 className="font-semibold">Mental Health Trend</h2>
-        </div>
-
-        {assessments.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            No assessment data available.
-          </p>
-        ) : (
-          <div className="overflow-x-auto">
-            <div className="flex items-end h-72 gap-8 min-w-175">
-
-              {assessments.map((item, i) => {
-
-                const height = (item.score / maxScore) * 100;
-
-                const barColor =
-                  item.severity === "Very Severe"
-                    ? "bg-red-500"
-                    : item.severity === "Severe"
-                      ? "bg-orange-500"
-                      : item.severity === "Moderate"
-                        ? "bg-yellow-500"
-                        : item.severity === "Mild"
-                          ? "bg-blue-500"
-                          : "bg-green-500";
-
-                return (
-                  <div
-                    key={i}
-                    className="flex flex-col items-center w-16"
-                  >
-
-                    {/* Score */}
-                    <p className="text-sm font-semibold text-gray-800 mb-2">
-                      {item.score}
-                    </p>
-
-                    {/* Bar Container */}
-                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-end">
-
-                      <div
-                        className={`${barColor} w-full rounded-lg transition-all duration-500`}
-                        style={{
-                          height: `${height}%`,
-                          minHeight: "100px",
-                        }}
-                        title={`Score: ${item.score} | ${item.severity}`}
-                      />
-
-                    </div>
-
-                    {/* Date */}
-                    <span className="text-xs text-gray-500 mt-2 text-center">
-                      {new Date(item.created_at).toLocaleDateString("en-US", {
-                        month: "short",
-                        day: "numeric",
-                      })}
-                    </span>
-
-                  </div>
-                );
-              })}
+              <div className="flex gap-3 mt-2 flex-wrap">
+                <span className="flex items-center gap-1 text-xs bg-gray-100 px-2 py-1 rounded-full">
+                  <MapPin size={12} /> India
+                </span>
+                <span className="flex items-center gap-1 text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  <Calendar size={12} /> Member since 2023
+                </span>
+              </div>
             </div>
           </div>
-        )}
+
+          {/* LINK DOCTOR */}
+          <div className="bg-white p-6 rounded-2xl shadow-sm">
+            <h2 className="font-medium mb-2">Link Your Doctor</h2>
+            <p className="text-sm text-gray-400 mb-4">
+              Connect with your professional care team for real-time progress sharing.
+            </p>
+
+            <div className="flex gap-3">
+              <input
+                type="text"
+                placeholder="Enter Doctor ID"
+                value={doctorId}
+                onChange={(e) => setDoctorId(e.target.value)}
+                className="flex-1 bg-gray-100 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-[#2f5d50]"
+              />
+
+              <button
+                onClick={async () => {
+                  const email = user?.email;
+
+                  const res = await fetch("/api/link-doctor", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      doctor_id: doctorId,
+                      patient_email: email,
+                    }),
+                  });
+
+                  const data = await res.json();
+
+                  if (data.success) alert("Doctor linked successfully");
+                  else alert(data.message);
+                }}
+                className="bg-[#2f5d50] text-white px-5 rounded-xl hover:opacity-90"
+              >
+                Link
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* STATS */}
+        <div className="grid md:grid-cols-3 gap-6">
+          {stats.map((stat, i) => (
+            <div
+              key={i}
+              className="bg-white p-5 rounded-2xl shadow-sm flex items-center justify-between"
+            >
+              <div>
+                <p className="text-2xl font-bold text-gray-900">
+                  {stat.value}
+                </p>
+                <p className="text-xs text-gray-400 mt-1 uppercase tracking-wide">
+                  {stat.label}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-[#eef3f1]">
+                <stat.icon className="text-[#2f5d50]" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* MENTAL HEALTH TREND */}
+        <div className="bg-white p-6 rounded-2xl shadow-sm">
+
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-2">
+              <TrendingUp className="text-[#2f5d50]" />
+              <h2 className="font-semibold text-gray-800">
+                Assessment score 
+              </h2>
+            </div>
+
+            <span className="text-xs text-gray-400">
+              Last {assessments.length} records
+            </span>
+          </div>
+
+          {assessments.length === 0 ? (
+            <p className="text-gray-400 text-sm">
+              No assessment data available.
+            </p>
+          ) : (
+            <div className="h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+
+                  <XAxis
+                    dataKey="timestamp"
+                    type="number"
+                    domain={["dataMin", "dataMax"]}
+                    tickFormatter={(tick) =>
+                      new Date(tick).toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      })
+                    }
+                  />
+
+                  <YAxis domain={[0, 75]} />
+
+                  <Tooltip
+                    labelFormatter={(label) =>
+                      new Date(label).toLocaleDateString("en-US", {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      })
+                    }
+                    formatter={(value, name, props) => {
+                      const data = props.payload;
+
+                      return [
+                        `Score: ${value} / 75`,
+                        `Severity: ${data.severity}`,
+                      ];
+                    }}
+                  />
+
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="#2f5d50"
+                    strokeWidth={3}
+                    dot={{ r: 4 }}
+                    activeDot={{ r: 7 }}
+                  />
+
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </div>
+
       </div>
-
-    {/* Legend */}
-    <div className="bg-white p-4 rounded-2xl shadow-sm flex flex-wrap gap-5 text-xs text-gray-600">
-
-      <span className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-green-400 rounded"></div> Minimal
-      </span>
-
-      <span className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-blue-400 rounded"></div> Mild
-      </span>
-
-      <span className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-yellow-400 rounded"></div> Moderate
-      </span>
-
-      <span className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-orange-400 rounded"></div> Severe
-      </span>
-
-      <span className="flex items-center gap-2">
-        <div className="w-3 h-3 bg-red-400 rounded"></div> Very Severe
-      </span>
-
     </div>
-
-  </div>
-);
+  );
 }
