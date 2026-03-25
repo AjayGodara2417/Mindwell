@@ -7,6 +7,17 @@ import { TrendingUp, CheckCircle } from "lucide-react";
 import { LineChart, Line } from "recharts";
 
 import {
+  Assessment,
+  SleepEntry,
+  Task,
+  Profile,
+  AssessmentResponse,
+  SleepResponse,
+  IntervalRef,
+  TaskType,
+} from "@/types/dashboard";
+
+import {
   BarChart,
   Bar,
   XAxis,
@@ -17,34 +28,40 @@ import {
 } from "recharts";
 
 export default function Stats() {
-  const [assessments, setAssessments] = useState([]);
-  const [sleepData, setSleepData] = useState([]);
-  const [tasks, setTasks] = useState([]);
-  const [weeklyTasks, setWeeklyTasks] = useState([]);
-  const [recentTasks, setRecentTasks] = useState([]);
-  const [sleepHours, setSleepHours] = useState("");
-  const [date, setDate] = useState(new Date());
-  const [loading, setLoading] = useState(true);
+  const [assessments, setAssessments] = useState<Assessment[]>([]);
+  const [sleepData, setSleepData] = useState<SleepEntry[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [weeklyTasks, setWeeklyTasks] = useState<Task[]>([]);
+  const [recentTasks, setRecentTasks] = useState<Task[]>([]);
+  const [sleepHours, setSleepHours] = useState<string>("");
+  const [date, setDate] = useState<Date>(new Date());
+  const [loading, setLoading] = useState<boolean>(true);
 
-  const [isSessionActive, setIsSessionActive] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(0);
-  const intervalRef = useRef<number | null>(null);
+  const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  const intervalRef = useRef<IntervalRef>(null);
 
+  const [isShakeActive, setIsShakeActive] = useState<boolean>(false);
+  const [shakeSeconds, setShakeSeconds] = useState<number>(0);
+  const shakeIntervalRef = useRef<IntervalRef>(null);
+
+  const email =
+    typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
+
+  // ================= TIMER LOGIC =================
   const startSession = () => {
-    // 5 minutes = 300 seconds
     setSecondsLeft(300);
     setIsSessionActive(true);
 
-    // clear any existing interval
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
-    intervalRef.current = window.setInterval(() => {
+    intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          // stop when reaching 0
-          clearInterval(intervalRef.current!);
+          if (intervalRef.current !== null) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+          }
           intervalRef.current = null;
           setIsSessionActive(false);
           return 0;
@@ -55,160 +72,191 @@ export default function Stats() {
   };
 
   const exitSession = () => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
     setIsSessionActive(false);
     setSecondsLeft(0);
   };
 
-  // cleanup on unmount
+  const startShakeSession = () => {
+    setShakeSeconds(300);
+    setIsShakeActive(true);
+
+    if (shakeIntervalRef.current) clearInterval(shakeIntervalRef.current);
+
+    shakeIntervalRef.current = setInterval(() => {
+      setShakeSeconds((s) => {
+        if (s <= 1) {
+          if (shakeIntervalRef.current !== null) {
+            clearInterval(shakeIntervalRef.current);
+          }
+          shakeIntervalRef.current = null;
+          setIsShakeActive(false);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  };
+
+  const exitShakeSession = () => {
+    if (shakeIntervalRef.current) clearInterval(shakeIntervalRef.current);
+    shakeIntervalRef.current = null;
+    setIsShakeActive(false);
+    setShakeSeconds(0);
+  };
+
+  // ================= CLEANUP =================
   useEffect(() => {
     return () => {
-      if (intervalRef.current) {
+      if (intervalRef.current !== null) {
         clearInterval(intervalRef.current);
+      }
+      if (shakeIntervalRef.current !== null) {
+        clearInterval(shakeIntervalRef.current);
       }
     };
   }, []);
 
-  const email =
-    typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
-
+  // ================= FETCH DATA =================
   useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
 
-        const profile = await fetch("/api/profile", {
+        const profileRes = await fetch("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
-        }).then((r) => r.json());
+        });
 
-        const assess = await fetch(
+        if (!profileRes.ok) throw new Error("Profile fetch failed");
+
+        const profile: Profile = await profileRes.json();
+
+        if (!profile?.email) throw new Error("No email found");
+
+        // ===== Assessments =====
+        const assessRes = await fetch(
           `/api/assessment?email=${profile.email}`
-        ).then((r) => r.json());
-        const sleep = await fetch(`/api/sleep?email=${profile.email}`).then(
-          (r) => r.json()
         );
-        // after fetching `assess`
-if (assess.success && Array.isArray(assess.history)) {
-  // sort by created_at ascending (oldest -> newest)
-  const sorted = assess.history.sort(
-    (a, b) => new Date(a.created_at) - new Date(b.created_at)
-  );
 
-  // keep only the most recent 10 entries
-  const latestTen = sorted.slice(-10);
+        const assess: AssessmentResponse = await assessRes.json();
 
-  setAssessments(latestTen);
-}
+        if (assess.success && Array.isArray(assess.history)) {
+          const sorted = assess.history
+            .sort(
+              (a, b) =>
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
+            )
+            .slice(-10);
 
-        // if (assess.success) setAssessments(assess.history);
+          setAssessments(sorted);
+        }
+
+        // ===== Sleep =====
+        const sleepRes = await fetch(
+          `/api/sleep?email=${profile.email}`
+        );
+
+        const sleep: SleepResponse = await sleepRes.json();
+
         if (sleep.success) setSleepData(sleep.data);
 
-        // FETCH TASKS (from planner)
+        // ===== Tasks =====
         if (email) {
           const res = await fetch(`/api/tasks?email=${email}`);
-          const data = await res.json();
+          const data: Task[] = await res.json();
 
-          // sort latest first (by id)
           const sorted = data.sort((a, b) => b.id - a.id);
-          setTasks(sorted);
 
-          // recentTasks: latest 3 tasks added
+          setTasks(sorted);
           setRecentTasks(sorted.slice(0, 3));
 
-          // weeklyTasks: tasks with a date in the current week
-          const now = new Date();
-          // compute start of week (Monday)
-          const day = now.getDay(); // 0 (Sun) - 6 (Sat)
-          const diffToMonday = (day + 6) % 7; // days since Monday
-          const startOfWeek = new Date(now);
-          startOfWeek.setDate(now.getDate() - diffToMonday);
-          startOfWeek.setHours(0, 0, 0, 0);
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(startOfWeek.getDate() + 6);
-          endOfWeek.setHours(23, 59, 59, 999);
-
-          const parseTaskDate = (t) => {
-            const dateStr = t.due_date || t.date || t.created_at;
-            if (!dateStr) return null;
-            const d = new Date(dateStr);
-            return isNaN(d.getTime()) ? null : d;
-          };
-
-          const weekly = sorted.filter((t) => {
-            const d = parseTaskDate(t);
-            if (!d) return false;
-            return d >= startOfWeek && d <= endOfWeek;
-          });
+          const weekly = sorted.filter((t) => t.type === TaskType.Weekly).slice(-4);
 
           setWeeklyTasks(weekly);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Fetch error:", err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchData();
   }, [email]);
 
-  const latest = assessments[assessments.length - 1];
+  // ================= DERIVED DATA =================
+  const latest: Assessment | undefined =
+    assessments[assessments.length - 1];
 
   const mentalChartData = assessments.map((item) => ({
-  score: item.score,
-  date: new Date(item.created_at).toLocaleDateString(),
-}));
-// compute last 7 days window (includes today)
-const endDate = new Date();
-endDate.setHours(23, 59, 59, 999);
-const startDate = new Date();
-startDate.setDate(endDate.getDate() - 6);
-startDate.setHours(0, 0, 0, 0);
-
-// filter sleepData to last 7 days, parse dates, sort oldest -> newest
-const sleepChartData = sleepData
-  .map((item) => {
-    const d = new Date(item.created_at || item.date || item.timestamp);
-    return { ...item, _dateObj: d };
-  })
-  .filter((item) => {
-    const d = item._dateObj;
-    return d && d >= startDate && d <= endDate;
-  })
-  .sort((a, b) => a._dateObj - b._dateObj)
-  .map((item) => ({
-    hours: item.hours,
-    date: item._dateObj.toLocaleDateString(),
+    score: item.score,
+    date: new Date(item.created_at).toLocaleDateString(),
   }));
 
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(endDate.getDate() - 6);
+  startDate.setHours(0, 0, 0, 0);
+
+  const sleepChartData = sleepData
+    .map((item: SleepEntry) => {
+      const d = new Date(
+        item.created_at ?? item.date ?? item.timestamp ?? ""
+      );
+      return { ...item, _dateObj: d };
+    })
+    .filter(
+      (item) =>
+        item._dateObj &&
+        item._dateObj >= startDate &&
+        item._dateObj <= endDate
+    )
+    .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime())
+    .slice(-7)
+    .map((item) => ({
+      hours: item.hours,
+      date: item._dateObj.toLocaleDateString(),
+    }));
+
+  // ================= SAVE SLEEP =================
   const saveSleep = async () => {
     if (!sleepHours) return;
 
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    const profile = await fetch("/api/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    }).then((r) => r.json());
+      const profile = await fetch("/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
 
-    await fetch("/api/sleep", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email: profile.email,
-        hours: Number(sleepHours),
-      }),
-    });
+      if (!profile?.email) return;
 
-    setSleepHours("");
+      await fetch("/api/sleep", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: profile.email,
+          hours: Number(sleepHours),
+        }),
+      });
 
-    const updated = await fetch(`/api/sleep?email=${profile.email}`).then((r) =>
-      r.json()
-    );
-    if (updated.success) setSleepData(updated.data);
+      setSleepHours("");
+
+      const updated = await fetch(
+        `/api/sleep?email=${profile.email}`
+      ).then((r) => r.json());
+
+      if (updated.success) setSleepData(updated.data);
+    } catch (err) {
+      console.error("Sleep save error:", err);
+    }
   };
 
+  // ================= LOADING =================
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center text-gray-500">
@@ -265,60 +313,109 @@ const sleepChartData = sleepData
             </div>
           </div>
 
-          <div className="bg-[#2f5d50] text-white max-h-fit rounded-2xl p-6 flex flex-col justify-between relative">
-            {/* Card content when session is not active */}
-            {!isSessionActive && (
-              <>
-                <div>
-                  <h3 className="text-lg font-semibold">Feeling Overwhelmed?</h3>
-                  <p className="text-sm opacity-80 mt-2">
-                    Take a 5-minute breathing exercise to reset your nervous system.
-                  </p>
-                </div>
-                <button
-                  onClick={startSession}
-                  className="mt-4 bg-white text-[#2f5d50] px-4 py-2 rounded-lg text-sm font-medium w-fit"
-                >
-                  Start Session
-                </button>
-              </>
-            )}
-
-            {/* Overlay shown while session is active */}
-            {isSessionActive && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
-                <div className="w-full max-w-md mx-4 text-center text-white">
-                  <h2 className="text-2xl font-semibold mb-4">Breathing Session</h2>
-
-                  {/* Timer display */}
-                  <div className="text-6xl font-bold tracking-wider mb-6">
-                    {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
-                    {String(secondsLeft % 60).padStart(2, "0")}
+          <div className="flex flex-col gap-2">
+            <div className="bg-[#2f5d50] text-white max-h-fit rounded-2xl p-4 px-6 flex flex-col justify-between relative">
+              {/* Card content when session is not active */}
+              {!isSessionActive && (
+                <>
+                  <div>
+                    <h3 className="text-lg font-semibold">Feeling Overwhelmed?</h3>
+                    <p className="text-sm opacity-80">
+                      Take a 5-minute breathing exercise to reset your nervous system.
+                    </p>
                   </div>
+                  <button
+                    onClick={startSession}
+                    className="mt-4 bg-white text-[#2f5d50] px-4 py-2 rounded-lg text-sm font-medium w-fit"
+                  >
+                    Start Session
+                  </button>
+                </>
+              )}
 
-                  {/* Simple breathing cue (optional) */}
-                  <p className="text-sm opacity-80 mb-6">
-                    Breathe in for 4 seconds, hold for 4, breathe out for 6. Repeat.
-                  </p>
+              {/* Overlay shown while session is active */}
+              {isSessionActive && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
+                  <div className="w-full max-w-md mx-4 text-center text-white">
+                    <h2 className="text-2xl font-semibold mb-4">Breathing Session</h2>
 
-                  <div className="flex justify-center gap-4">
-                    <button
-                      onClick={exitSession}
-                      className="bg-white text-[#2f5d50] px-4 py-2 rounded-lg font-medium"
-                    >
-                      Exit
-                    </button>
+                    {/* Timer display */}
+                    <div className="text-6xl font-bold tracking-wider mb-6">
+                      {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
+                      {String(secondsLeft % 60).padStart(2, "0")}
+                    </div>
+
+                    {/* Simple breathing cue (optional) */}
+                    <p className="text-sm opacity-80 mb-6">
+                      Breathe in for 4 seconds, hold for 4, breathe out for 6. Repeat.
+                    </p>
+
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={exitSession}
+                        className="bg-white text-[#2f5d50] px-4 py-2 rounded-lg font-medium"
+                      >
+                        Exit
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
+
+            {/* SHAKING EXERCISE CARD */}
+            <div className="bg-linear-to-br from-purple-300 to-violet-500 text-white rounded-2xl p-4 px-6 flex flex-col justify-between">
+              {!isShakeActive && (
+                <>
+                  <div>
+                    <h3 className="text-lg font-semibold">Release Stress Fast</h3>
+                    <p className="text-sm opacity-80 ">
+                      Do a 5-minute shaking exercise to release tension from your body.
+                    </p>
+                  </div>
+                  <button
+                    onClick={startShakeSession}
+                    className="mt-4 bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-medium w-fit"
+                  >
+                    Start Shaking
+                  </button>
+                </>
+              )}
+
+              {isShakeActive && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
+                  <div className="w-full max-w-md mx-4 text-center text-white">
+                    <h2 className="text-2xl font-semibold mb-4">Shaking Exercise</h2>
+
+                    <div className="text-6xl font-bold tracking-wider mb-6">
+                      {String(Math.floor(shakeSeconds / 60)).padStart(2, "0")}:
+                      {String(shakeSeconds % 60).padStart(2, "0")}
+                    </div>
+
+                    <p className="text-sm opacity-80 mb-6">
+                      Shake your hands, wrists, shoulders, and body freely.
+                      Let go of tension. Keep breathing naturally.
+                    </p>
+
+                    <div className="flex justify-center gap-4">
+                      <button
+                        onClick={exitShakeSession}
+                        className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium"
+                      >
+                        Exit
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="bg-white rounded-2xl p-4 shadow-sm">
             <Calendar
               value={date}
-              onChange={(val) => setDate(val)}
-              className="!border-none !w-full text-sm"
+              onChange={(val) => setDate(val as Date)}
+              className="border-none! w-full! text-sm"
               tileClassName="rounded-lg hover:bg-[#e6f0ed]"
             />
           </div>
@@ -361,8 +458,8 @@ const sleepChartData = sleepData
                       <CheckCircle
                         className={
                           task.completed
-                            ? "text-[#2f5d50] flex-shrink-0"
-                            : "text-gray-300 flex-shrink-0"
+                            ? "text-[#2f5d50] shrink-0"
+                            : "text-gray-300 shrink-0"
                         }
                         size={18}
                       />
@@ -390,7 +487,7 @@ const sleepChartData = sleepData
           {/* SLEEP TRACKER */}
           <div className="bg-pink-200 max-h-fit p-6 rounded-2xl shadow-sm">
             <h2 className="font-medium mb-3">Sleep Tracker</h2>
-            <p className="text-sm text-gray-400 mb-2">Last Night's Sleep (hrs)</p>
+            <p className="text-sm text-gray-400 mb-2">Last Night Sleep (hrs)</p>
             <input
               type="number"
               value={sleepHours}
@@ -406,6 +503,21 @@ const sleepChartData = sleepData
             </button>
           </div>
 
+          {/* SLEEP CHART */}
+          <div className="bg-white max-h-fit p-6 rounded-2xl shadow-sm">
+            <h2 className="font-medium mb-3">Sleep History</h2>
+            <div className="h-32">
+              <ResponsiveContainer>
+                <BarChart data={sleepChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide />
+                  <Tooltip />
+                  <Bar dataKey="hours" fill="#2f5d50" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
           {/* RECENT HISTORY (CONNECTED) */}
           <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-2xl shadow-sm">
             <div className="flex items-center gap-2 mb-2">
@@ -423,8 +535,8 @@ const sleepChartData = sleepData
                     <CheckCircle
                       className={
                         task.completed
-                          ? "text-[#2f5d50] flex-shrink-0"
-                          : "text-gray-300 flex-shrink-0"
+                          ? "text-[#2f5d50] shrink-0"
+                          : "text-gray-300 shrink-0"
                       }
                       size={18}
                     />
@@ -445,21 +557,6 @@ const sleepChartData = sleepData
             </div>
           </div>
 
-          {/* SLEEP CHART */}
-          <div className="bg-white max-h-fit p-6 rounded-2xl shadow-sm">
-            <h2 className="font-medium mb-3">Sleep History</h2>
-            <div className="h-32">
-              <ResponsiveContainer>
-                <BarChart data={sleepChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Bar dataKey="hours" fill="#2f5d50" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
         </div>
       </div>
     </div>
