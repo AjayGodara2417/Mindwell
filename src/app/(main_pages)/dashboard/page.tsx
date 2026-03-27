@@ -4,7 +4,6 @@ import { useEffect, useState, useRef } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { TrendingUp, CheckCircle } from "lucide-react";
-import { LineChart, Line } from "recharts";
 
 import {
   Assessment,
@@ -186,6 +185,29 @@ export default function Stats() {
     fetchData();
   }, [email]);
 
+  const getSleepDayKey = () => {
+    const now = new Date();
+
+    // Clone date
+    const adjusted = new Date(now);
+
+    // If before 6 AM → treat as previous day
+    if (now.getHours() < 6) {
+      adjusted.setDate(adjusted.getDate() - 1);
+    }
+
+    return adjusted.toISOString().split("T")[0]; // YYYY-MM-DD
+  };
+
+  const [isSleepLocked, setIsSleepLocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    const last = localStorage.getItem("lastSleepEntry");
+    const todayKey = getSleepDayKey();
+
+    return last === todayKey;
+  });
+
   // ================= DERIVED DATA =================
   const latest: Assessment | undefined =
     assessments[assessments.length - 1];
@@ -224,7 +246,7 @@ export default function Stats() {
 
   // ================= SAVE SLEEP =================
   const saveSleep = async () => {
-    if (!sleepHours) return;
+    if (!sleepHours || isSleepLocked) return;
 
     try {
       const token = localStorage.getItem("token");
@@ -244,6 +266,11 @@ export default function Stats() {
         }),
       });
 
+      // ✅ STORE LOCK
+      const key = getSleepDayKey();
+      localStorage.setItem("lastSleepEntry", key);
+
+      setIsSleepLocked(true);
       setSleepHours("");
 
       const updated = await fetch(
@@ -251,9 +278,32 @@ export default function Stats() {
       ).then((r) => r.json());
 
       if (updated.success) setSleepData(updated.data);
+
     } catch (err) {
       console.error("Sleep save error:", err);
     }
+  };
+
+  const score = latest?.score || 0;
+  const percentage = Math.round((score / 75) * 100);
+
+  const getSeverity = () => {
+    if (score <= 9) return { label: "Minimal", color: "text-green-600" };
+    if (score <= 19) return { label: "Mild", color: "text-yellow-500" };
+    if (score <= 29) return { label: "Moderate", color: "text-orange-500" };
+    return { label: "Severe", color: "text-red-500" };
+  };
+
+  const severity = getSeverity();
+
+  const getMessage = () => {
+    if (score <= 9)
+      return "Your responses indicate minimal signs of depression. Keep maintaining a healthy lifestyle and stay connected with loved ones.";
+    if (score <= 19)
+      return "You may be experiencing mild symptoms. Consider small lifestyle changes and self-care routines.";
+    if (score <= 29)
+      return "Moderate symptoms detected. It may help to talk to someone or seek guidance.";
+    return "Severe symptoms detected. Please consider reaching out to a professional for support.";
   };
 
   // ================= LOADING =================
@@ -278,43 +328,84 @@ export default function Stats() {
 
         {/* TOP GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white max-h-fit rounded-2xl p-6 shadow-sm">
-            <p className="text-xs text-gray-400">ASSESSMENT SCORE</p>
+          <div className="bg-white rounded-2xl p-4 shadow-xl flex flex-col max-h-fit items-center text-center space-y-2">
 
-            <div className="flex items-center justify-between">
-              <h2 className="text-4xl font-bold text-[#2f5d50] mt-2">
-                {latest?.score || 0}
-                <span className="text-base text-gray-400"> / 75</span>
-              </h2>
-              {/* <p className="text-green-600 text-sm mt-3">+4% improved from last week</p> */}
+            <p className="text-sm text-gray-500">Latest Score</p>
+
+            <div className="flex gap-6 items-center">
+
+            {/* Circle Progress */}
+            <div className="relative w-28 h-28">
+              <svg className="w-full h-full -rotate-90">
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r="45"
+                  stroke="#e5e7eb"
+                  strokeWidth="10"
+                  fill="none"
+                />
+            
+                <circle
+                  cx="50%"
+                  cy="50%"
+                  r="45"
+                  stroke="#2f5d50"
+                  strokeWidth="10"
+                  fill="none"
+                  strokeDasharray={2 * Math.PI * 45}
+                  strokeDashoffset={
+                    2 * Math.PI * 45 * (1 - percentage / 100)
+                  }
+                  strokeLinecap="round"
+                />
+              </svg>
+
+              <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-700">
+                {percentage}%
+              </div>
+            </div>
+            {/* Score */}
+            <h2 className="text-4xl font-bold text-[#2f5d50]">
+              {score} <span className="text-gray-400 text-lg">/ 75</span>
+            </h2>
             </div>
 
-            {/* Minimal line-only graph (no axes, no ticks, no grid, no tooltip) */}
-            <div className="mt-4 w-full h-28 sm:h-36">
-              {mentalChartData && mentalChartData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={mentalChartData} margin={{ top: 6, right: 6, left: 6, bottom: 6 }}>
-                    <Line
-                      type="monotone"
-                      dataKey="score"
-                      stroke="#10b981"
-                      strokeWidth={3}
-                      dot={false}
-                      activeDot={false}
-                      connectNulls
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              ) : (
-                <div className="h-full flex items-center justify-center text-sm text-gray-400">
-                  No data to display
-                </div>
-              )}
+            {/* Severity */}
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />
+              <p className={`font-medium ${severity.color}`}>
+                {severity.label}
+              </p>
+              <span className="text-gray-400 text-sm">({percentage}%)</span>
             </div>
+
+            {/* Message */}
+            <p className="text-sm text-gray-600 max-w-xs">
+              {getMessage()}
+            </p>
+
+            {/* Actions */}
+            <div className="flex gap-3 w-full pt-2">
+              <button
+                onClick={() => router.push("/assessment")}
+                className="flex-1 border border-gray-300 py-2 rounded-lg text-sm hover:bg-gray-50"
+              >
+                Retake Test
+              </button>
+
+              <button
+                onClick={() => router.push("/stats")}
+                className="flex-1 bg-[#2f5d50] text-white py-2 rounded-lg text-sm hover:opacity-90"
+              >
+                View Stats
+              </button>
+            </div>
+
           </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="bg-[#2f5d50] text-white max-h-fit rounded-2xl p-4 px-6 flex flex-col justify-between relative">
+          <div className="flex flex-col gap-4">
+            <div className="bg-[#2f5d50] text-white shadow-lg max-h-fit rounded-2xl p-4 px-6 flex flex-col justify-between relative">
               {/* Card content when session is not active */}
               {!isSessionActive && (
                 <>
@@ -364,7 +455,7 @@ export default function Stats() {
             </div>
 
             {/* SHAKING EXERCISE CARD */}
-            <div className="bg-linear-to-br from-purple-300 to-violet-500 text-white rounded-2xl p-4 px-6 flex flex-col justify-between">
+            <div className="bg-linear-to-br from-purple-300 to-violet-500 text-white shadow-lg rounded-2xl p-4 px-6 flex flex-col justify-between">
               {!isShakeActive && (
                 <>
                   <div>
@@ -411,7 +502,7 @@ export default function Stats() {
             </div>
           </div>
 
-          <div className="bg-white rounded-2xl p-4 shadow-sm">
+          <div className="bg-white rounded-2xl p-4 shadow-xl">
             <Calendar
               value={date}
               onChange={(val) => setDate(val as Date)}
@@ -423,7 +514,7 @@ export default function Stats() {
 
         {/* MIDDLE GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm">
+          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xl">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
                 <TrendingUp className="text-[#2f5d50]" />
@@ -446,7 +537,7 @@ export default function Stats() {
           </div>
 
           <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-5 shadow-sm">
+            <div className="bg-white rounded-2xl p-5 shadow-xl">
               <h3 className="font-medium mb-4">Weekly Tasks</h3>
               <div className="space-y-2">
                 {weeklyTasks.length > 0 ? (
@@ -485,26 +576,34 @@ export default function Stats() {
         {/* BOTTOM GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* SLEEP TRACKER */}
-          <div className="bg-pink-200 max-h-fit p-6 rounded-2xl shadow-sm">
+          <div className="bg-pink-200 max-h-fit p-6 rounded-2xl shadow-xl">
             <h2 className="font-medium mb-3">Sleep Tracker</h2>
             <p className="text-sm text-gray-400 mb-2">Last Night Sleep (hrs)</p>
             <input
               type="number"
               value={sleepHours}
               onChange={(e) => setSleepHours(e.target.value)}
-              className="w-full bg-gray-100 px-4 py-2 rounded-lg mb-3"
+              disabled={isSleepLocked}
+              className="w-full bg-gray-100 px-4 py-2 rounded-lg mb-3 disabled:opacity-50"
               placeholder="7.5"
             />
+
             <button
               onClick={saveSleep}
-              className="w-full bg-[#2f5d50] text-white py-2 rounded-lg"
+              disabled={isSleepLocked}
+              className="w-full bg-[#2f5d50] text-white py-2 rounded-lg disabled:opacity-50"
             >
-              Save Progress
+              {isSleepLocked ? "Already Logged Today" : "Save Progress"}
             </button>
+            {isSleepLocked && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                You can log sleep again after 6:00 AM tomorrow.
+              </p>
+            )}
           </div>
 
           {/* SLEEP CHART */}
-          <div className="bg-white max-h-fit p-6 rounded-2xl shadow-sm">
+          <div className="bg-white max-h-fit p-6 rounded-2xl shadow-xl">
             <h2 className="font-medium mb-3">Sleep History</h2>
             <div className="h-32">
               <ResponsiveContainer>
@@ -519,7 +618,7 @@ export default function Stats() {
             </div>
           </div>
           {/* RECENT HISTORY (CONNECTED) */}
-          <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-2xl shadow-sm">
+          <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-2xl shadow-2xl">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="text-[#2f5d50]" size={20} />
               <h2 className="font-semibold">Recent Tasks</h2>
@@ -530,7 +629,7 @@ export default function Stats() {
                 recentTasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex items-center gap-3 p-3 rounded-lg bg-[#f0f4f3] transition-colors"
+                    className="flex items-center gap-3 p-3 hover:rounded-xl rounded-lg bg-[#f0f4f3] transition-colors"
                   >
                     <CheckCircle
                       className={
