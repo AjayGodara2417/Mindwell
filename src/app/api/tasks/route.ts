@@ -19,14 +19,32 @@ export async function GET(req: Request) {
 }
 
 // ADD TASK
+// export async function POST(req: Request) {
+//   try {
+//     const body = await req.json();
+//     const { email, text, type } = body;
+
+//     await db.query(
+//       "INSERT INTO planner_tasks (patient_email, text, type) VALUES (?, ?, ?)",
+//       [email, text, type]
+//     );
+
+//     return NextResponse.json({ success: true });
+//   } catch (err) {
+//     return NextResponse.json({ error: err }, { status: 500 });
+//   }
+// }
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { email, text, type } = body;
 
+    const decodedEmail = decodeURIComponent(email);
+
     await db.query(
       "INSERT INTO planner_tasks (patient_email, text, type) VALUES (?, ?, ?)",
-      [email, text, type]
+      [decodedEmail, text, type]
     );
 
     return NextResponse.json({ success: true });
@@ -34,7 +52,6 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: err }, { status: 500 });
   }
 }
-
 // DELETE TASK
 export async function DELETE(req: Request) {
   try {

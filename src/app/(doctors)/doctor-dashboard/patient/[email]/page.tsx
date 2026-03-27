@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   AreaChart,
   Area,
   XAxis,
@@ -15,7 +13,7 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import { Bell, Search } from "lucide-react";
+import { Bell, LineChartIcon, Search } from "lucide-react";
 
 type Assessment = {
   score: number;
@@ -82,6 +80,124 @@ export default function PatientDetails() {
 
   if (loading) return <div className="p-10">Loading...</div>;
 
+  function DoctorTaskPanel({ email }: { email: string }) {
+    const [text, setText] = useState("");
+    const [type, setType] = useState<"daily" | "weekly" | "monthly">("daily");
+    const [loading, setLoading] = useState(false);
+    const [lastTask, setLastTask] = useState<any>(null);
+
+    const handleAdd = async () => {
+      if (!text.trim()) return;
+
+      setLoading(true);
+
+      try {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            text,
+            type,
+          }),
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          setLastTask({
+            text,
+            type,
+            time: new Date().toLocaleTimeString(),
+          });
+
+          setText("");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+
+      setLoading(false);
+    };
+
+    return (
+      <div className="space-y-5">
+
+        {/* INPUT CARD */}
+        <div className="bg-gray-50 p-4 rounded-xl border">
+
+          <textarea
+            placeholder="Write recommendation or assign a task..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            className="w-full bg-transparent outline-none text-sm resize-none"
+            rows={3}
+          />
+
+          {/* TYPE SELECTOR */}
+          <div className="flex justify-between items-center mt-4">
+
+            <div className="flex gap-2">
+              {["daily", "weekly", "monthly"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setType(t as any)}
+                  className={`px-3 py-1 text-xs rounded-full transition ${type === t
+                      ? "bg-teal-600 text-white"
+                      : "bg-white border text-gray-500"
+                    }`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={handleAdd}
+              disabled={loading}
+              className="bg-teal-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-teal-700 transition"
+            >
+              {loading ? "Adding..." : "Add"}
+            </button>
+
+          </div>
+        </div>
+
+        {/* SUCCESS FEEDBACK */}
+        {lastTask && (
+          <div className="bg-green-50 border border-green-200 p-4 rounded-xl animate-fade-in">
+
+            <div className="flex justify-between items-center">
+
+              <div>
+                <p className="text-sm font-medium text-green-800">
+                  Task Added Successfully ✅
+                </p>
+
+                <p className="text-sm text-gray-700 mt-1">
+                  {lastTask.text}
+                </p>
+
+                <p className="text-xs text-gray-400 mt-1">
+                  {lastTask.type.toUpperCase()} • {lastTask.time}
+                </p>
+              </div>
+
+              <span className="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full">
+                Sent
+              </span>
+
+            </div>
+
+          </div>
+        )}
+
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
 
@@ -118,15 +234,15 @@ export default function PatientDetails() {
           <div className="flex justify-between mb-4">
             <div>
               <h3 className="font-semibold text-gray-700">
-                Monthly Mood Baseline
+                Assessment test results
               </h3>
               <p className="text-sm text-gray-500">
                 Emotional stability trend
               </p>
             </div>
 
-            <span className="text-xs bg-green-100 text-green-600 px-3 py-1 rounded-full">
-              Stable
+            <span className="text-green-600 px-3 py-1 rounded-full">
+              <LineChartIcon />
             </span>
           </div>
 
@@ -149,7 +265,7 @@ export default function PatientDetails() {
         </div>
 
         {/* RIGHT CARD */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm flex flex-col justify-between">
+        <div className="bg-white max-h-fit rounded-2xl p-6 shadow-sm flex flex-col justify-between">
 
           <div>
             <h3 className="font-semibold text-gray-700 mb-2">
@@ -163,9 +279,9 @@ export default function PatientDetails() {
           <div className="text-4xl font-bold text-teal-700 mt-4">
             {sleepData.length
               ? (
-                  sleepData.reduce((a, b) => a + b.hours, 0) /
-                  sleepData.length
-                ).toFixed(1)
+                sleepData.reduce((a, b) => a + b.hours, 0) /
+                sleepData.length
+              ).toFixed(1)
               : 0}
             <span className="text-lg text-gray-500 ml-1">
               hrs
@@ -203,32 +319,13 @@ export default function PatientDetails() {
         </div>
 
         {/* SMALL WINS */}
-        <div className="lg:col-span-2 bg-gray-50 rounded-2xl p-6">
-
+        {/* TASK + RECOMMENDATION PANEL */}
+        <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm">
           <h3 className="font-semibold mb-4">
-            Small Wins
+            Doctor Recommendations & Tasks
           </h3>
 
-          <div className="grid md:grid-cols-2 gap-4 text-sm">
-
-            <div className="bg-white p-4 rounded-xl">
-              7-Day Consistency
-            </div>
-
-            <div className="bg-white p-4 rounded-xl">
-              Sleep Improved
-            </div>
-
-            <div className="bg-white p-4 rounded-xl">
-              Mood Stable
-            </div>
-
-            <div className="bg-white p-4 rounded-xl">
-              Activity Regular
-            </div>
-
-          </div>
-
+          <DoctorTaskPanel email={email as string} />
         </div>
 
       </div>
