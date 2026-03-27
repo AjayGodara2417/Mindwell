@@ -405,10 +405,10 @@ export default function Stats() {
               </button>
 
               <button
-                onClick={() => router.push("/stats")}
+                onClick={() => router.push("/profile")}
                 className="flex-1 bg-[#2f5d50] text-white py-2 rounded-lg text-sm hover:opacity-90"
               >
-                View Stats
+                View Profile
               </button>
             </div>
 
