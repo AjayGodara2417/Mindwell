@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { TrendingUp, CheckCircle } from "lucide-react";
@@ -25,8 +25,16 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
+import { useRouter } from "next/navigation";
 
 export default function Stats() {
+  return (
+      <Suspense fallback={<div className="p-6">Loading...</div>}>
+        <StatsData />
+      </Suspense>
+    );
+  }
+  function StatsData() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [sleepData, setSleepData] = useState<SleepEntry[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -43,6 +51,8 @@ export default function Stats() {
   const [isShakeActive, setIsShakeActive] = useState<boolean>(false);
   const [shakeSeconds, setShakeSeconds] = useState<number>(0);
   const shakeIntervalRef = useRef<IntervalRef>(null);
+
+  const router = useRouter();
 
   const email =
     typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
