@@ -548,7 +548,10 @@ export default function Stats() {
 
           <div className="space-y-6">
             <div className="bg-white rounded-2xl p-5 shadow-xl">
-              <h3 className="font-medium mb-4">Weekly Tasks</h3>
+              <div className="flex gap-2">
+                <CheckCircle size={20} />
+              <h3 className="font-medium mb-4" >Weekly Tasks</h3>
+              </div>
               <div className="space-y-2">
                 {weeklyTasks.length > 0 ? (
                   weeklyTasks.map((task) => (
@@ -628,9 +631,9 @@ export default function Stats() {
             </div>
           </div>
           {/* RECENT HISTORY (CONNECTED) */}
-          <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-2xl shadow-2xl">
+          <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-xl shadow-2xl">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="text-[#2f5d50]" size={20} />
+              <CheckCircle size={20} />
               <h2 className="font-semibold">Recent Tasks</h2>
             </div>
 
