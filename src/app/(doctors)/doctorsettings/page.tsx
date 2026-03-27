@@ -103,7 +103,7 @@ export default function Doctorsettings() {
     </div>
 
     {/* Logout */}
-    <div className="bg-white p-6 rounded-2xl shadow-sm text-center">
+    <div className="p-6 text-center">
       <p className="font-medium">Ready to leave?</p>
 
       <button

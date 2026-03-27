@@ -25,8 +25,8 @@ export default function DoctorLayout({
       icon: LayoutDashboard,
     },
     {
-      name: "Patient Stats",
-      href: "/doctor-dashboard/patient/demo", // adjust route
+      name: "All Patient",
+      href: "/doctor-dashboard/patient/", // adjust route
       icon: User,
     },
     {

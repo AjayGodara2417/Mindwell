@@ -3,10 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  Users,
   Search,
   ArrowRight,
   Bell,
+  User,
 } from "lucide-react";
 
 type Patient = {
@@ -67,7 +67,7 @@ export default function DoctorDashboard() {
 
         <div className="flex items-center gap-4">
           <Bell className="text-gray-500 cursor-pointer" />
-          <div className="w-9 h-9 rounded-full bg-gray-300" />
+          <User className="w-6 h-6 text-gray-500 cursor-pointer" />
         </div>
       </div>
 
