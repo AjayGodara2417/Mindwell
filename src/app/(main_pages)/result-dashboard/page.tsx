@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Activity, TrendingUp, Calendar, MessageSquare, BookOpen } from "lucide-react";
 
 function RadialProgress({ value, size = 120 }: { value: number; size?: number }) {
-  const radius = 45;
+  const radius = 55;
   const stroke = 10;
   const normalizedRadius = radius - stroke / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
@@ -13,15 +13,15 @@ function RadialProgress({ value, size = 120 }: { value: number; size?: number })
 
   return (
     <svg height={size} width={size} className="block rotate-[-90deg]">
-      <circle stroke="#f1f5f9" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={size/2} cy={size/2} />
+      <circle stroke="#f1f5f9" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={size / 2} cy={size / 2} />
       <circle
         stroke="#0d9488"
         fill="transparent"
         strokeWidth={stroke}
         strokeLinecap="round"
         r={normalizedRadius}
-        cx={size/2}
-        cy={size/2}
+        cx={size / 2}
+        cy={size / 2}
         strokeDasharray={`${circumference} ${circumference}`}
         strokeDashoffset={strokeDashoffset}
         className="transition-all duration-1000 ease-out"
@@ -55,11 +55,88 @@ export default function ResultDashboard() {
   );
 }
 
+function generateInsight(mood: number, energy: number, stress: number) {
+  if (stress >= 8 && mood <= 4) {
+    return "High stress combined with low mood detected. Consider rest and reaching out for support.";
+  }
+
+  if (energy <= 3) {
+    return "Low energy levels observed. Sleep and recovery might help improve overall wellbeing.";
+  }
+
+  if (mood >= 7 && stress <= 4) {
+    return "You are in a positive and balanced state. Keep maintaining your current routine.";
+  }
+
+  return "Your current state is moderately balanced. Small lifestyle improvements can help optimize wellbeing.";
+}
+
+function Metric({
+  label,
+  value,
+  type,
+}: {
+  label: string;
+  value: number;
+  type: "mood" | "energy" | "stress";
+}) {
+  const getConfig = () => {
+    if (type === "mood") {
+      if (value <= 3) return { text: "Low", emoji: "😔", color: "bg-red-400" };
+      if (value <= 7) return { text: "Balanced", emoji: "🙂", color: "bg-amber-400" };
+      return { text: "Positive", emoji: "😄", color: "bg-green-500" };
+    }
+
+    if (type === "energy") {
+      if (value <= 3) return { text: "Low", emoji: "😴", color: "bg-blue-400" };
+      if (value <= 7) return { text: "Stable", emoji: "⚡", color: "bg-indigo-400" };
+      return { text: "High", emoji: "🔥", color: "bg-purple-500" };
+    }
+
+    if (type === "stress") {
+      if (value <= 3) return { text: "Relaxed", emoji: "😌", color: "bg-green-400" };
+      if (value <= 7) return { text: "Moderate", emoji: "🙂", color: "bg-amber-400" };
+      return { text: "High", emoji: "😣", color: "bg-red-500" };
+    }
+  };
+
+  const config = getConfig();
+
+  return (
+    <div className="space-y-2">
+      <div className="flex justify-between items-center">
+        <span className="text-sm font-medium text-slate-600">
+          {label}
+        </span>
+
+        <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+          <span>{config.emoji}</span>
+          <span>{config.text}</span>
+        </div>
+      </div>
+
+      {/* Progress */}
+      <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+        <div
+          className={`h-2.5 rounded-full transition-all duration-700 ${config.color}`}
+          style={{ width: `${value * 10}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 function ResultDashboardContent() {
   const params = useSearchParams();
   const router = useRouter();
   const score = Number(params?.get("score")) || 42;
   const percentage = Math.round((score / 75) * 100);
+  const memoryLevel = Number(params?.get("memoryLevel")) || 0;
+  const mood = params?.get("mood") || "";
+  const financial = params?.get("financial") || "";
+  const moodScore = Number(params?.get("moodScore")) || 0;
+  const energy = Number(params?.get("energy")) || 0;
+  const stress = Number(params?.get("stress")) || 0;
 
   let level = "";
   let colorClass = "";
@@ -81,6 +158,16 @@ function ResultDashboardContent() {
     colorClass = "bg-red-500";
     themeColor = "text-red-600";
     message = "Your responses indicate significant symptoms. It is recommended to consult a professional.";
+  }
+
+  let cognitiveNote = "";
+
+  if (memoryLevel >= 8) {
+    cognitiveNote = "Strong cognitive performance observed.";
+  } else if (memoryLevel >= 5) {
+    cognitiveNote = "Moderate focus levels. Can improve with exercises.";
+  } else {
+    cognitiveNote = "Low attention span detected. Cognitive training recommended.";
   }
 
   return (
@@ -108,24 +195,187 @@ function ResultDashboardContent() {
 
           {/* Left Column: Score Card */}
           <section className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col items-center text-center">
-              <RadialProgress value={percentage} />
+            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-8 flex flex-col items-center text-center">
+
+              {/* Score + Label */}
+              <div className="relative">
+                <RadialProgress value={percentage} />
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-slate-800">
+                    {percentage}%
+                  </span>
+                  <span className="text-xs text-slate-400">
+                    Overall Score
+                  </span>
+                </div>
+              </div>
+
+              {/* Severity */}
               <div className="mt-6 space-y-2">
-                <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Severity Level</p>
-                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${colorClass} bg-opacity-10 ${themeColor.replace('text-', 'bg-').replace('600', '100')}`}>
-                  <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
+                <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                  Severity Level
+                </p>
+
+                <div
+                  className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-semibold 
+      ${themeColor.replace("text-", "bg-").replace("600", "100")} ${themeColor}`}
+                >
+                  <span
+                    className={`w-2 h-2 rounded-full ${colorClass.replace("bg-", "bg-")
+                      }`}
+                  ></span>
                   {level}
                 </div>
               </div>
-              <p className="mt-6 text-slate-600 text-sm leading-relaxed">{message}</p>
 
+              {/* Divider */}
+              <div className="w-full h-px bg-slate-100 my-6" />
+
+              {/* Message */}
+              <p className="text-slate-600 text-sm leading-relaxed max-w-xs">
+                {message}
+              </p>
+
+              {/* Actions */}
               <div className="mt-8 w-full grid grid-cols-2 gap-3">
-                <button onClick={() => router.push("/assessment")} className="px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors">
+
+                {/* Secondary */}
+                <button
+                  onClick={() => router.push("/assessment")}
+                  className="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition"
+                >
                   Retake
                 </button>
-                <button onClick={() => router.push("/dashboard")} className="px-4 py-2.5 text-sm font-medium text-white bg-teal-600 rounded-xl hover:bg-teal-700 transition-colors">
-                  Done
+
+                {/* Primary */}
+                <button
+                  onClick={() => router.push("/dashboard")}
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+                >
+                  Go to Dashboard
                 </button>
+              </div>
+            </div>
+
+            {/* Memory Score Card */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
+                  🧠
+                </div>
+                <h2 className="text-lg font-bold text-slate-800">
+                  Cognitive Performance
+                </h2>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-500">Simon Level</span>
+                  <span className="text-lg font-bold text-purple-600">
+                    {memoryLevel}
+                  </span>
+                </div>
+
+                <div className="w-full bg-slate-100 rounded-full h-2.5">
+                  <div
+                    className="bg-purple-500 h-2.5 rounded-full transition-all duration-1000"
+                    style={{ width: `${Math.min(memoryLevel * 10, 100)}%` }}
+                  />
+                </div>
+
+                <p className="text-xs text-slate-500">
+                  Higher levels indicate better attention span and working memory.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <h2 className="text-lg font-bold text-slate-800 mb-4">
+                Personal Insights
+              </h2>
+
+              <div className="space-y-4">
+
+                {/* Mood */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                  <span className="text-sm text-slate-500">Mood</span>
+                  <span className="font-semibold text-slate-800">
+                    {mood || "Not provided"}
+                  </span>
+                </div>
+
+                {/* Financial */}
+                <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
+                  <span className="text-sm text-slate-500">
+                    Financial Stress
+                  </span>
+                  <span
+                    className={`font-semibold ${financial === "High"
+                      ? "text-red-500"
+                      : financial === "Moderate"
+                        ? "text-amber-500"
+                        : "text-green-500"
+                      }`}
+                  >
+                    {financial || "Not provided"}
+                  </span>
+                </div>
+
+                {/* Insight */}
+                <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-900">
+                  {mood === "Sad" || financial === "High"
+                    ? "Your emotional and financial inputs suggest elevated stress. Consider reaching out for support."
+                    : "Your responses indicate stable emotional condition. Continue healthy habits."}
+                </div>
+
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
+
+              {/* Header */}
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-800">
+                    Self Perception
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Based on your real-time inputs
+                  </p>
+                </div>
+                <div className="text-2xl">🧠</div>
+              </div>
+
+              {/* Metrics */}
+              <div className="space-y-5">
+
+                {/* Mood */}
+                <Metric
+                  label="Mood"
+                  value={moodScore}
+                  type="mood"
+                />
+
+                {/* Energy */}
+                <Metric
+                  label="Energy"
+                  value={energy}
+                  type="energy"
+                />
+
+                {/* Stress */}
+                <Metric
+                  label="Stress"
+                  value={stress}
+                  type="stress"
+                />
+
+              </div>
+
+              {/* Insight */}
+              <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-600">
+                {generateInsight(moodScore, energy, stress)}
               </div>
             </div>
 
@@ -136,7 +386,7 @@ function ResultDashboardContent() {
                 <span>Clinical Note</span>
               </div>
               <p className="text-sm text-blue-900/80 leading-relaxed">
-                Primary drivers appear to be low energy and sleep disturbances. Social engagement shows signs of improvement compared to last month.
+                {message} {cognitiveNote}
               </p>
             </div>
           </section>
