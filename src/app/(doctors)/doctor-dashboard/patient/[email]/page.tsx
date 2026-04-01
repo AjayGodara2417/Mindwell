@@ -31,11 +31,40 @@ type Sleep = {
   index?: number;
 };
 
+type Memory = {
+  score: number;
+  level: number;
+  created_at?: string;
+  date?: string;
+  index?: number;
+};
+
+type Subjective = {
+  illness: string;
+  thoughts: string;
+  financial_stress: string;
+  mood: string;
+  created_at?: string;
+  date?: string;
+};
+
+type Rating = {
+  mood: number;
+  energy: number;
+  stress: number;
+  created_at?: string;
+  date?: string;
+  index?: number;
+};
+
 export default function PatientDetails() {
   const { email } = useParams();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [sleepData, setSleepData] = useState<Sleep[]>([]);
   const [loading, setLoading] = useState(true);
+  const [memoryData, setMemoryData] = useState<Memory[]>([]);
+  const [subjectiveData, setSubjectiveData] = useState<Subjective[]>([]);
+  const [ratingData, setRatingData] = useState<Rating[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -45,6 +74,15 @@ export default function PatientDetails() {
 
         const res2 = await fetch(`/api/sleep?email=${email}`);
         const data2 = await res2.json();
+
+        const res3 = await fetch(`/api/memory-assessment?email=${email}`);
+        const data3 = await res3.json();
+
+        const res4 = await fetch(`/api/subjective-assessment?email=${email}`);
+        const data4 = await res4.json();
+
+        const res5 = await fetch(`/api/rating-assessment?email=${email}`);
+        const data5 = await res5.json();
 
         if (data1.success) {
           const formatted = data1.history
@@ -68,6 +106,49 @@ export default function PatientDetails() {
           }));
           setSleepData(formatted);
         }
+        if (data3.success) {
+          const formatted = data3.data
+            .sort(
+              (a: Memory, b: Memory) =>
+                new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
+            )
+            .map((m: Memory, i: number) => ({
+              ...m,
+              date: new Date(m.created_at!).toLocaleDateString(),
+              index: i + 1,
+            }));
+
+          setMemoryData(formatted);
+        }
+        if (data4.success) {
+          const formatted = data4.data
+            .sort(
+              (a: Subjective, b: Subjective) =>
+                new Date(a.created_at!).getTime() -
+                new Date(b.created_at!).getTime()
+            )
+            .map((s: Subjective) => ({
+              ...s,
+              date: new Date(s.created_at!).toLocaleDateString(),
+            }));
+
+          setSubjectiveData(formatted);
+        }
+        if (data5.success) {
+          const formatted = data5.data
+            .sort(
+              (a: Rating, b: Rating) =>
+                new Date(a.created_at!).getTime() -
+                new Date(b.created_at!).getTime()
+            )
+            .map((r: Rating, i: number) => ({
+              ...r,
+              date: new Date(r.created_at!).toLocaleDateString(),
+              index: i + 1,
+            }));
+
+          setRatingData(formatted);
+        }
       } catch (err) {
         console.error(err);
       }
@@ -78,6 +159,9 @@ export default function PatientDetails() {
   }, [email]);
 
   const latest = assessments[assessments.length - 1];
+  const latestMemory = memoryData[memoryData.length - 1];
+  const latestSubjective = subjectiveData[subjectiveData.length - 1];
+  const latestRating = ratingData[ratingData.length - 1];
   const avgSleep = sleepData.length ? (sleepData.reduce((a, b) => a + b.hours, 0) / sleepData.length).toFixed(1) : 0;
 
   if (loading) return <div className="p-10 flex items-center justify-center text-slate-500">Loading patient records...</div>;
@@ -132,14 +216,14 @@ export default function PatientDetails() {
               <AreaChart data={assessments}>
                 <defs>
                   <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
+                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                 <XAxis dataKey="index" hide />
                 <YAxis hide domain={[0, 100]} />
-                <Tooltip 
+                <Tooltip
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   cursor={{ stroke: '#cbd5e1', strokeWidth: 1 }}
                 />
@@ -176,9 +260,9 @@ export default function PatientDetails() {
             </div>
 
             <div className="w-full bg-teal-900/30 rounded-full h-2 mt-6 backdrop-blur-sm">
-              <div 
-                className="h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]" 
-                style={{ width: `${Math.min((Number(avgSleep) / 10) * 100, 100)}%` }} 
+              <div
+                className="h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                style={{ width: `${Math.min((Number(avgSleep) / 10) * 100, 100)}%` }}
               />
             </div>
             <p className="text-xs text-teal-200 mt-2 text-right">Target: 8.0 hrs</p>
@@ -194,6 +278,24 @@ export default function PatientDetails() {
           <StatBox label="Latest Severity" value={latest?.severity || "N/A"} color="text-orange-600" bg="bg-orange-50" />
           <StatBox label="Assessment %" value={`${latest?.percentage || 0}%`} color="text-blue-600" bg="bg-blue-50" />
           <StatBox label="Total Records" value={assessments.length} color="text-slate-600" bg="bg-slate-100" />
+          <StatBox
+            label="Memory Level"
+            value={latestMemory?.level || 0}
+            color="text-purple-600"
+            bg="bg-purple-50"
+          />
+          <StatBox
+            label="Mood"
+            value={latestSubjective?.mood || "N/A"}
+            color="text-teal-600"
+            bg="bg-teal-50"
+          />
+          <StatBox
+            label="Stress Level"
+            value={latestRating ? `${latestRating.stress}/10` : "N/A"}
+            color="text-red-500"
+            bg="bg-red-50"
+          />
         </div>
 
         {/* Doctor Task Panel */}
@@ -206,6 +308,166 @@ export default function PatientDetails() {
         </div>
       </div>
 
+      {/* Memory Assessment Chart */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+              🧠 Memory Performance
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              Based on Simon game levels
+            </p>
+          </div>
+
+          <div className="text-right">
+            <p className="text-xs text-slate-400 uppercase">Latest Level</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {latestMemory?.level || 0}
+            </p>
+          </div>
+        </div>
+
+        <div className="h-64 w-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={memoryData}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="index" />
+              <YAxis />
+              <Tooltip />
+
+              <Line
+                type="monotone"
+                dataKey="level"
+                stroke="#7c3aed"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Subjective Assessment */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="font-bold text-slate-800 mb-6">
+          Patient Self Report
+        </h3>
+
+        {latestSubjective ? (
+          <div className="grid md:grid-cols-2 gap-6">
+
+            {/* Mood */}
+            <div className="bg-slate-50 p-4 rounded-xl">
+              <p className="text-xs text-slate-500 uppercase font-medium">
+                Mood
+              </p>
+              <p className="text-lg font-bold text-teal-600 mt-1">
+                {latestSubjective.mood}
+              </p>
+            </div>
+
+            {/* Financial Stress */}
+            <div className="bg-slate-50 p-4 rounded-xl">
+              <p className="text-xs text-slate-500 uppercase font-medium">
+                Financial Stress
+              </p>
+              <p className="text-lg font-bold text-orange-600 mt-1">
+                {latestSubjective.financial_stress}
+              </p>
+            </div>
+
+            {/* Illness */}
+            <div className="bg-slate-50 p-4 rounded-xl col-span-2">
+              <p className="text-xs text-slate-500 uppercase font-medium">
+                Recent Illness
+              </p>
+              <p className="text-sm text-slate-700 mt-1">
+                {latestSubjective.illness || "No issues reported"}
+              </p>
+            </div>
+
+            {/* Thoughts */}
+            <div className="bg-slate-50 p-4 rounded-xl col-span-2">
+              <p className="text-xs text-slate-500 uppercase font-medium">
+                Thoughts
+              </p>
+              <p className="text-sm text-slate-700 mt-1 italic">
+                "{latestSubjective.thoughts || "No notes"}"
+              </p>
+            </div>
+
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm">
+            No subjective data available.
+          </p>
+        )}
+      </div>
+
+      {/* Mental State (Live Ratings) */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="font-bold text-slate-800 mb-6">
+          Current Mental State
+        </h3>
+
+        {latestRating ? (
+          <div className="grid md:grid-cols-3 gap-6">
+
+            {/* Mood */}
+            <div className="bg-slate-50 p-4 rounded-xl text-center">
+              <p className="text-xs text-slate-500 uppercase">Mood</p>
+              <p className="text-2xl font-bold text-teal-600 mt-2">
+                {latestRating.mood}/10
+              </p>
+            </div>
+
+            {/* Energy */}
+            <div className="bg-slate-50 p-4 rounded-xl text-center">
+              <p className="text-xs text-slate-500 uppercase">Energy</p>
+              <p className="text-2xl font-bold text-yellow-500 mt-2">
+                {latestRating.energy}/10
+              </p>
+            </div>
+
+            {/* Stress */}
+            <div className="bg-slate-50 p-4 rounded-xl text-center">
+              <p className="text-xs text-slate-500 uppercase">Stress</p>
+              <p className="text-2xl font-bold text-red-500 mt-2">
+                {latestRating.stress}/10
+              </p>
+            </div>
+
+          </div>
+        ) : (
+          <p className="text-slate-500 text-sm">
+            No rating data available.
+          </p>
+        )}
+      </div>
+
+      {/* Mood / Energy / Stress Trend */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+        <h3 className="font-bold text-slate-800 mb-6">
+          Mental Trend Analysis
+        </h3>
+
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={ratingData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="index" />
+              <YAxis domain={[0, 10]} />
+              <Tooltip />
+
+              <Line type="monotone" dataKey="mood" stroke="#14b8a6" strokeWidth={2} />
+              <Line type="monotone" dataKey="energy" stroke="#eab308" strokeWidth={2} />
+              <Line type="monotone" dataKey="stress" stroke="#ef4444" strokeWidth={2} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
       {/* Clinical Insight Box */}
       <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
         <h3 className="text-blue-800 font-bold mb-2 flex items-center gap-2">
@@ -213,9 +475,13 @@ export default function PatientDetails() {
           AI Clinical Insight
         </h3>
         <p className="text-blue-900/80 leading-relaxed text-sm">
-          Patient shows <span className="font-semibold">improving trends</span> in emotional stability and sleep cycles. 
-          Consistent progress suggests effective self-regulation and treatment adherence. 
-          Recommend continuing current monitoring protocol.
+          Patient demonstrates a <span className="font-semibold">multi-dimensional mental profile</span>.
+          Emotional scores show stability, while memory performance indicates improving cognitive ability.
+          Subjective inputs reflect a mood of <span className="font-semibold">{latestSubjective?.mood || "unknown"}</span>.
+          Current mental state ratings suggest mood at <span className="font-semibold">{latestRating?.mood || 0}/10</span>,
+          energy at <span className="font-semibold">{latestRating?.energy || 0}/10</span>,
+          and stress at <span className="font-semibold">{latestRating?.stress || 0}/10</span>.
+          Overall condition appears stable with moderate variability.
         </p>
       </div>
 
@@ -226,8 +492,8 @@ export default function PatientDetails() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sleepData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="index" tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
-              <YAxis tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
+              <XAxis dataKey="index" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
               />
@@ -306,11 +572,10 @@ function DoctorTaskPanel({ email }: { email: string }) {
               <button
                 key={t}
                 onClick={() => setType(t)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all capitalize ${
-                  type === t
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
-                    : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
-                }`}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-all capitalize ${type === t
+                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                  : "bg-white text-slate-500 hover:bg-slate-100 border border-slate-200"
+                  }`}
               >
                 {t}
               </button>
