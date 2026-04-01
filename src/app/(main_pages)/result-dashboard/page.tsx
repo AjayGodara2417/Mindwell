@@ -2,98 +2,54 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { Activity, TrendingUp, Calendar, MessageSquare, BookOpen } from "lucide-react";
 
-/**
- * Modern Result Dashboard
- * - Tailwind CSS required
- * - Small helper components included (Radial, MiniBar, Sparkline)
- */
-
-function RadialProgress({ value, size = 96 }: { value: number; size?: number }) {
-  const radius = 40;
-  const stroke = 8;
+function RadialProgress({ value, size = 120 }: { value: number; size?: number }) {
+  const radius = 45;
+  const stroke = 10;
   const normalizedRadius = radius - stroke / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
   const strokeDashoffset = circumference - (value / 100) * circumference;
 
   return (
-    <svg
-      height={size}
-      width={size}
-      viewBox={`0 0 ${radius * 2 + stroke} ${radius * 2 + stroke}`}
-      className="block"
-      aria-hidden
-    >
-      <g transform={`translate(${stroke / 2}, ${stroke / 2})`}>
-        <circle
-          stroke="#e6eef0"
-          fill="transparent"
-          strokeWidth={stroke}
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-        />
-        <circle
-          stroke="#2f5d50"
-          fill="transparent"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          r={normalizedRadius}
-          cx={radius}
-          cy={radius}
-          strokeDasharray={`${circumference} ${circumference}`}
-          strokeDashoffset={strokeDashoffset}
-          style={{ transition: "stroke-dashoffset 700ms ease" }}
-        />
-        <text
-          x={radius}
-          y={radius}
-          textAnchor="middle"
-          dominantBaseline="central"
-          className="font-semibold text-gray-900"
-          style={{ fontSize: 14 }}
-        >
-          {value}%
-        </text>
-      </g>
-    </svg>
-  );
-}
-
-function MiniBar({ value, color = "bg-teal-600" }: { value: number; color?: string }) {
-  return (
-    <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-      <div
-        className={`${color} h-3 rounded-full transition-all duration-700`}
-        style={{ width: `${value}%` }}
-        role="progressbar"
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={100}
+    <svg height={size} width={size} className="block rotate-[-90deg]">
+      <circle stroke="#f1f5f9" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={size/2} cy={size/2} />
+      <circle
+        stroke="#0d9488"
+        fill="transparent"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        r={normalizedRadius}
+        cx={size/2}
+        cy={size/2}
+        strokeDasharray={`${circumference} ${circumference}`}
+        strokeDashoffset={strokeDashoffset}
+        className="transition-all duration-1000 ease-out"
       />
-    </div>
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="fill-slate-800 font-bold text-xl rotate-[90deg]">
+        {value}%
+      </text>
+    </svg>
   );
 }
 
-function Sparkline({ points = [49, 46, 44, 42] }: { points?: number[] }) {
-  const max = Math.max(...points, 1);
-  const step = 96 / Math.max(points.length - 1, 1);
-  const path = points
-    .map((p, i) => `${i === 0 ? "M" : "L"} ${i * step} ${40 - (p / max) * 30}`)
-    .join(" ");
+function MiniBar({ value, color = "bg-teal-600", label }: { value: number; color?: string; label: string }) {
   return (
-    <svg viewBox="0 0 96 40" className="w-full h-12">
-      <path d={path} fill="none" stroke="#2f5d50" strokeWidth="2" strokeLinecap="round" />
-      {points.map((p, i) => (
-        <circle key={i} cx={i * step} cy={40 - (p / max) * 30} r="2.2" fill="#2f5d50" />
-      ))}
-    </svg>
+    <div className="space-y-1">
+      <div className="flex justify-between text-xs font-medium">
+        <span className="text-slate-600">{label}</span>
+        <span className="text-slate-900">{value}%</span>
+      </div>
+      <div className="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+        <div className={`${color} h-2.5 rounded-full transition-all duration-1000`} style={{ width: `${value}%` }} />
+      </div>
+    </div>
   );
 }
 
 export default function ResultDashboard() {
   return (
-    <Suspense fallback={<div className="p-6">Loading...</div>}>
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-slate-500">Loading results...</div>}>
       <ResultDashboardContent />
     </Suspense>
   );
@@ -102,222 +58,153 @@ export default function ResultDashboard() {
 function ResultDashboardContent() {
   const params = useSearchParams();
   const router = useRouter();
-
   const score = Number(params?.get("score")) || 42;
   const percentage = Math.round((score / 75) * 100);
 
   let level = "";
   let colorClass = "";
   let message = "";
+  let themeColor = "text-teal-600";
 
   if (score <= 25) {
     level = "Minimal";
-    colorClass = "bg-green-500";
-    message =
-      "Your responses indicate minimal signs of depression. Keep maintaining a healthy lifestyle and stay connected with loved ones.";
+    colorClass = "bg-emerald-500";
+    themeColor = "text-emerald-600";
+    message = "Your responses indicate minimal signs of depression. Keep maintaining a healthy lifestyle.";
   } else if (score <= 50) {
     level = "Moderate";
-    colorClass = "bg-yellow-500";
-    message =
-      "Your current score indicates moderate symptoms. Consider short-term focused actions and follow-up with your clinician.";
+    colorClass = "bg-amber-500";
+    themeColor = "text-amber-600";
+    message = "Your current score indicates moderate symptoms. Consider short-term focused actions.";
   } else {
     level = "Severe";
     colorClass = "bg-red-500";
-    message =
-      "Your responses indicate significant symptoms. It is strongly recommended to consult a mental health professional.";
+    themeColor = "text-red-600";
+    message = "Your responses indicate significant symptoms. It is recommended to consult a professional.";
   }
 
-  const patientName = params?.get("patient") || "Sarah Jenkins";
-  const completedOn = params?.get("date") || "Oct 24, 2023";
-
   return (
-    <div className="min-h-screen bg-linear-to-b from-[#f6f8f7] to-white p-6 flex items-start justify-center">
-      <div className="w-full max-w-5xl">
+    <div className="min-h-screen bg-slate-50 p-6 md:p-8 animate-in fade-in duration-500">
+      <div className="max-w-6xl mx-auto space-y-8">
+
         {/* Header */}
-        <header className="flex items-center justify-between mb-6">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Assessment Results</h1>
-            <p className="text-sm text-gray-500">
-              <span className="font-medium">Patient:</span> <span className="text-gray-700">{patientName}</span>{" "}
-              • <span className="text-gray-500">Completed on {completedOn}</span>
-            </p>
+            <h1 className="text-2xl font-bold text-slate-800">Assessment Results</h1>
+            <p className="text-slate-500 text-sm mt-1">Completed on {new Date().toLocaleDateString()}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => router.push("/dashboard")}
-              className="px-3 py-2 text-sm border rounded-md text-teal-700 hover:bg-teal-50"
-            >
+          <div className="flex gap-3">
+            <button onClick={() => router.push("/dashboard")} className="px-4 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors">
               Dashboard
             </button>
-            <button
-              onClick={() => router.push("/profile")}
-              className="px-3 py-2 text-sm bg-teal-700 text-white rounded-md shadow-sm hover:opacity-95"
-            >
-              Profile
+            <button onClick={() => router.push("/profile")} className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-xl hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all">
+              View Profile
             </button>
           </div>
         </header>
 
-        {/* Grid */}
+        {/* Main Grid */}
         <main className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left column: Score card */}
-          <section className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6 ">
-              <div className="flex items-center gap-4">
-                <div className="shrink-0">
-                  <RadialProgress value={percentage} />
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-500">Total Score</div>
-                  <div className="mt-1 text-2xl font-bold text-gray-900">{score} / 75</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <span className={`inline-block w-3 h-3 rounded-full ${colorClass}`} aria-hidden />
-                    <span className="text-sm font-medium text-gray-800">{level}</span>
-                    <span className="text-xs text-gray-400 ml-2">({percentage}%)</span>
-                  </div>
-                  <p className="mt-3 text-sm text-gray-600">{message}</p>
+
+          {/* Left Column: Score Card */}
+          <section className="lg:col-span-1 space-y-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-8 flex flex-col items-center text-center">
+              <RadialProgress value={percentage} />
+              <div className="mt-6 space-y-2">
+                <p className="text-sm font-semibold text-slate-400 uppercase tracking-wider">Severity Level</p>
+                <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-bold ${colorClass} bg-opacity-10 ${themeColor.replace('text-', 'bg-').replace('600', '100')}`}>
+                  <span className={`w-2 h-2 rounded-full ${colorClass}`}></span>
+                  {level}
                 </div>
               </div>
+              <p className="mt-6 text-slate-600 text-sm leading-relaxed">{message}</p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => router.push("/dashboard")}
-                  className="px-3 py-2 text-sm border rounded-lg text-gray-700 hover:bg-gray-50"
-                >
-                  Retake Test
+              <div className="mt-8 w-full grid grid-cols-2 gap-3">
+                <button onClick={() => router.push("/assessment")} className="px-4 py-2.5 text-sm font-medium text-slate-700 bg-slate-50 border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors">
+                  Retake
                 </button>
-                <button
-                  onClick={() => router.push("/stats")}
-                  className="px-3 py-2 text-sm bg-[#2f5d50] text-white rounded-lg hover:opacity-95"
-                >
-                  View Stats
+                <button onClick={() => router.push("/dashboard")} className="px-4 py-2.5 text-sm font-medium text-white bg-teal-600 rounded-xl hover:bg-teal-700 transition-colors">
+                  Done
                 </button>
               </div>
             </div>
 
-            {/* Quick clinical summary */}
-            <div className="mt-4 bg-white rounded-2xl shadow-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-xs text-gray-500">Status</div>
-                  <div className="font-medium text-gray-800">Clinically Stable</div>
-                </div>
-                <div>
-                  <div className="text-xs text-gray-500">Risk</div>
-                  <div className="font-medium text-gray-800">Low / Manageable</div>
-                </div>
+            {/* Clinical Note */}
+            <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
+              <div className="flex items-center gap-2 mb-3 text-blue-800 font-bold">
+                <Activity size={18} />
+                <span>Clinical Note</span>
               </div>
-              <div className="mt-3 text-xs text-gray-500">
-                Quick clinical note: primary drivers are low energy and sleep disturbances; social engagement improving.
-              </div>
+              <p className="text-sm text-blue-900/80 leading-relaxed">
+                Primary drivers appear to be low energy and sleep disturbances. Social engagement shows signs of improvement compared to last month.
+              </p>
             </div>
           </section>
 
-          {/* Middle column: Symptom breakdown & trend */}
+          {/* Right Column: Details */}
           <section className="lg:col-span-2 space-y-6">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-3">Clinical Analysis</h2>
-              <p className="text-sm text-gray-600 leading-relaxed">
-                {message} This summary highlights the main contributors to the score and contextualizes recent changes versus baseline.
-              </p>
 
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-3 bg-[#f9faf9] rounded-lg">
-                  <div className="text-xs text-gray-500">Primary Driver</div>
-                  <div className="font-medium text-gray-800">Low Energy</div>
+            {/* Symptom Breakdown */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+                  <TrendingUp size={20} />
                 </div>
-                <div className="p-3 bg-[#f9faf9] rounded-lg">
-                  <div className="text-xs text-gray-500">Secondary Driver</div>
-                  <div className="font-medium text-gray-800">Sleep Disturbance</div>
+                <h2 className="text-lg font-bold text-slate-800">Symptom Breakdown</h2>
+              </div>
+              <div className="grid md:grid-cols-2 gap-x-8 gap-y-6">
+                <MiniBar value={78} label="Sleep Hygiene" color="bg-indigo-500" />
+                <MiniBar value={62} label="Energy Levels" color="bg-amber-500" />
+                <MiniBar value={34} label="Social Interest" color="bg-pink-500" />
+                <MiniBar value={45} label="Cognitive Focus" color="bg-blue-500" />
+              </div>
+            </div>
+
+            {/* Next Steps */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
+                  <Calendar size={20} />
                 </div>
-                <div className="p-3 bg-[#f9faf9] rounded-lg">
-                  <div className="text-xs text-gray-500">Social Engagement</div>
-                  <div className="font-medium text-gray-800">Improving</div>
+                <h2 className="text-lg font-bold text-slate-800">Recommended Next Steps</h2>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="mt-1 min-w-[24px]">
+                    <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">1</div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-800 text-sm">Message Your Clinician</h4>
+                    <p className="text-xs text-slate-500 mt-1">Discuss your recent energy fluctuations.</p>
+                  </div>
+                  <button onClick={() => router.push("/messages")} className="ml-auto text-xs font-medium text-teal-600 hover:underline">Send</button>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="mt-1 min-w-[24px]">
+                    <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">2</div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-800 text-sm">Schedule Follow-up</h4>
+                    <p className="text-xs text-slate-500 mt-1">Secure your spot for the next review.</p>
+                  </div>
+                  <button onClick={() => router.push("/planner")} className="ml-auto text-xs font-medium text-teal-600 hover:underline">Book</button>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
+                  <div className="mt-1 min-w-[24px]">
+                    <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">3</div>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold text-slate-800 text-sm">Read: Managing Sleep</h4>
+                    <p className="text-xs text-slate-500 mt-1">Recommended article from our library.</p>
+                  </div>
+                  <button onClick={() => router.push("/resources")} className="ml-auto text-xs font-medium text-teal-600 hover:underline">Read</button>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-2xl shadow-lg p-6">
-                <h3 className="text-md font-medium text-gray-800 mb-4">Symptom Breakdown</h3>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Sleep Hygiene</span>
-                      <span className="font-medium">78%</span>
-                    </div>
-                    <MiniBar value={78} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Energy Levels</span>
-                      <span className="font-medium">62%</span>
-                    </div>
-                    <MiniBar value={62} />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Social Interest</span>
-                      <span className="font-medium">34%</span>
-                    </div>
-                    <MiniBar value={34} color="bg-indigo-500" />
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm text-gray-600 mb-1">
-                      <span>Cognitive Focus</span>
-                      <span className="font-medium">45%</span>
-                    </div>
-                    <MiniBar value={45} color="bg-rose-500" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl shadow-lg p-6  flex flex-col">
-                <h3 className="text-md font-medium text-gray-800 mb-2">Historical Trend</h3>
-                <Sparkline />
-                <div className="mt-3 text-sm text-gray-600">
-                  <div><strong>14% Improvement</strong> compared to <strong>Sept 12 (Score: 49)</strong></div>
-                  <div className="text-xs text-gray-400 mt-1">Trend shows gradual improvement over the last 3 assessments.</div>
-                </div>
-                <div className="mt-4 flex gap-2">
-                  <button className="px-3 py-2 text-sm border rounded-md">View Full History</button>
-                  <button className="px-3 py-2 text-sm bg-teal-700 text-white rounded-md">Compare Baseline</button>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl shadow-lg p-6 ">
-              <h3 className="text-md font-medium text-gray-800 mb-3">Next Steps (7 days)</h3>
-              <ul className="space-y-3 text-sm text-gray-700">
-                <li className="flex items-start gap-3">
-                  <span className="text-teal-700 font-semibold">•</span>
-                  <div>
-                    <div className="font-medium">Message Dr. Thorne</div>
-                    <div className="text-xs text-gray-500">Discuss energy fluctuations</div>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-teal-700 font-semibold">•</span>
-                  <div>
-                    <div className="font-medium">Schedule Follow-up</div>
-                    <div className="text-xs text-gray-500">Secure your spot for Nov 1</div>
-                  </div>
-                </li>
-                <li className="flex items-start gap-3">
-                  <span className="text-teal-700 font-semibold">•</span>
-                  <div>
-                    <div className="font-medium">Recommended Reading</div>
-                    <div className="text-xs text-gray-500">Managing Sleep Patterns</div>
-                  </div>
-                </li>
-              </ul>
-
-              <div className="mt-4 flex gap-3">
-                <button onClick={() => router.push("/messages")} className="px-4 py-2 bg-white border rounded-md text-sm">Message Clinician</button>
-                <button onClick={() => router.push("/book")} className="px-4 py-2 bg-teal-700 text-white rounded-md text-sm">Book Follow-up</button>
-                <button onClick={() => router.push("/resources")} className="ml-auto px-4 py-2 border rounded-md text-sm">Resources</button>
-              </div>
-            </div>
           </section>
         </main>
       </div>

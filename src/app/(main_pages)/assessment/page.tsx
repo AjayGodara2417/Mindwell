@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 const questions = [
@@ -33,29 +33,21 @@ const questions = [
 ];
 
 const options = [
-  { label: "Never", value: 0 },
-  { label: "Sometimes", value: 1 },
-  { label: "Often", value: 2 },
-  { label: "Always", value: 3 },
+  { label: "Never", value: 0, color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
+  { label: "Sometimes", value: 1, color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
+  { label: "Often", value: 2, color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100" },
+  { label: "Always", value: 3, color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" },
 ];
 
-export default function DashboardPage() {
+export default function AssessmentPage() {
   const router = useRouter();
-
-  // const [isLocked, setIsLocked] = useState(false);
   const [current, setCurrent] = useState(0);
+  const [answers, setAnswers] = useState<(number | null)[]>(Array(questions.length).fill(null));
 
-  const [answers, setAnswers] = useState<(number | null)[]>(
-    Array(questions.length).fill(null)
-  );
-
-  // ✅ Check lock ONLY on mount
   const [isLocked, setIsLocked] = useState(() => {
     if (typeof window === "undefined") return false;
-
     const lastSubmitted = localStorage.getItem("lastAssessmentDate");
     const today = new Date().toLocaleDateString("en-CA");
-
     return lastSubmitted === today;
   });
 
@@ -66,42 +58,30 @@ export default function DashboardPage() {
     updated[current] = value;
     setAnswers(updated);
 
+    // Small delay for visual feedback
     setTimeout(async () => {
       if (current < questions.length - 1) {
         setCurrent((prev) => prev + 1);
       } else {
-        const totalScore = updated.reduce(
-          (sum: number, val) => (sum ?? 0) + (val ?? 0),
-          0
-        );
-
+        const totalScore = updated.reduce((sum: number, val) => (sum ?? 0) + (val ?? 0), 0);
         const percentage = Math.round(((totalScore ?? 0) / 75) * 100);
-
         const email = localStorage.getItem("userEmail");
 
         try {
           await fetch("/api/assessment", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email,
-              score: totalScore,
-              percentage,
-            }),
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, score: totalScore, percentage }),
           });
         } catch (error) {
           console.error(error);
         }
 
-        // ✅ SET DATE ONLY AFTER SUBMISSION
         const today = new Date().toLocaleDateString("en-CA");
         localStorage.setItem("lastAssessmentDate", today);
-
         router.push(`/result-dashboard?score=${totalScore}`);
       }
-    }, 300);
+    }, 250);
   };
 
   const prevQuestion = () => {
@@ -111,119 +91,89 @@ export default function DashboardPage() {
   // 🔒 LOCK SCREEN
   if (isLocked) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="bg-white p-10 rounded-2xl shadow-xl text-center max-w-md space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">
-            Assessment Completed
-          </h2>
-
-          <p className="text-gray-500">
-            You’ve already submitted today’s assessment.
-          </p>
-
-          <p className="text-sm text-gray-400">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+        <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border border-slate-100">
+          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="text-amber-500" size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-slate-800 mb-2">Assessment Completed</h2>
+          <p className="text-slate-600 mb-4">You have already submitted todays assessment.</p>
+          <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-500">
             Please come back tomorrow. The assessment will be available again after midnight.
-          </p>
+          </div>
+          <button onClick={() => router.push('/dashboard')} className="mt-6 text-teal-600 font-medium hover:underline">
+            Return to Dashboard
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-3xl space-y-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 md:p-8">
+      <div className="w-full max-w-2xl space-y-6">
 
-        {/* Progress Dots */}
-        <div className="flex justify-center gap-2 flex-wrap">
-          {questions.map((_, index) => {
-            const answered = answers[index] !== null;
-
-            return (
-              <div
-                key={index}
-                className={`w-2.5 h-2.5 rounded-full transition
-                ${index === current
-                    ? "bg-[#2f5d50] scale-125"
-                    : answered
-                      ? "bg-[#2f5d50]/40"
-                      : "bg-gray-300"
-                  }`}
-              />
-            );
-          })}
+        {/* Progress Header */}
+        <div className="flex items-center justify-between text-sm font-medium text-slate-500 mb-2">
+          <span>Question {current + 1} of {questions.length}</span>
+          <span>{progress}% Completed</span>
         </div>
 
-        {/* Card */}
-        <div className="bg-white rounded-2xl shadow-sm p-8 space-y-8">
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+          <div
+            className="h-full bg-linear-to-r from-teal-500 to-emerald-500 transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
 
-          {/* Header */}
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>
-              Question {current + 1} of {questions.length}
-            </span>
-            <span>{progress}%</span>
-          </div>
+        {/* Question Card */}
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-          {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-gray-200 rounded overflow-hidden">
-            <div
-              className="h-1.5 bg-[#2f5d50] transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-
-          {/* Question */}
-          <h2 className="text-xl font-medium text-gray-900 text-center px-4">
+          <h2 className="text-2xl font-bold text-slate-800 text-center leading-relaxed">
             {questions[current].question}
           </h2>
 
-          {/* Options */}
-          <div className="space-y-3">
+          {/* Options Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {options.map((option) => {
               const selected = answers[current] === option.value;
-
               return (
                 <button
                   key={option.label}
                   onClick={() => handleAnswer(option.value)}
-                  className={`w-full flex items-center justify-between px-5 py-4 rounded-xl transition
-                  ${selected
-                      ? "bg-[#2f5d50] text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
+                  className={`
+                    relative flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 group
+                    ${selected 
+                      ? "border-teal-600 bg-teal-50 ring-1 ring-teal-600" 
+                      : "border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50"
+                    }
+                  `}
                 >
-                  <span className="text-base font-medium">
+                  <span className={`font-semibold ${selected ? "text-teal-900" : "text-slate-700"}`}>
                     {option.label}
                   </span>
-
-                  <div
-                    className={`w-5 h-5 rounded-full border flex items-center justify-center
-                    ${selected
-                        ? "border-white bg-white"
-                        : "border-gray-300"
-                      }`}
-                  >
-                    {selected && (
-                      <div className="w-2.5 h-2.5 bg-[#2f5d50] rounded-full" />
-                    )}
+                  <div className={`
+                    w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
+                    ${selected ? "border-teal-600 bg-teal-600" : "border-slate-300 group-hover:border-teal-400"}
+                  `}>
+                    {selected && <CheckCircle2 size={14} className="text-white" />}
                   </div>
                 </button>
               );
             })}
           </div>
 
-          {/* Footer */}
-          <div className="flex justify-between items-center pt-2">
+          {/* Footer Navigation */}
+          <div className="flex justify-between items-center pt-4 border-t border-slate-100">
             <button
               onClick={prevQuestion}
               disabled={current === 0}
-              className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-800 disabled:opacity-40"
+              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
             >
-              <ArrowLeft size={16} />
-              Back
+              <ArrowLeft size={16} /> Back
             </button>
-
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-slate-400 italic">
               Select an option to continue
             </span>
           </div>

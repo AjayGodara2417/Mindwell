@@ -3,8 +3,19 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { TrendingUp, CheckCircle } from "lucide-react";
+import { 
+  TrendingUp, 
+  CheckCircle, 
+  Wind, 
+  Activity, 
+  Moon, 
+  ListTodo,
+  X,
+  Play
+} from "lucide-react";
 
+// Assuming these types exist in your project based on previous context
+// If not, you may need to define them or remove the import and use inline types
 import {
   Assessment,
   SleepEntry,
@@ -29,12 +40,13 @@ import { useRouter } from "next/navigation";
 
 export default function Stats() {
   return (
-      <Suspense fallback={<div className="p-6">Loading...</div>}>
-        <StatsData />
-      </Suspense>
-    );
-  }
-  function StatsData() {
+    <Suspense fallback={<div className="flex items-center justify-center h-screen text-slate-500">Loading dashboard...</div>}>
+      <StatsData />
+    </Suspense>
+  );
+}
+
+function StatsData() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [sleepData, setSleepData] = useState<SleepEntry[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -54,23 +66,17 @@ export default function Stats() {
 
   const router = useRouter();
 
-  const email =
-    typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
+  const email = typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
 
   // ================= TIMER LOGIC =================
   const startSession = () => {
     setSecondsLeft(300);
     setIsSessionActive(true);
-
     if (intervalRef.current) clearInterval(intervalRef.current);
-
     intervalRef.current = setInterval(() => {
       setSecondsLeft((s) => {
         if (s <= 1) {
-          if (intervalRef.current !== null) {
-            clearInterval(intervalRef.current);
-            intervalRef.current = null;
-          }
+          if (intervalRef.current !== null) clearInterval(intervalRef.current);
           intervalRef.current = null;
           setIsSessionActive(false);
           return 0;
@@ -90,15 +96,11 @@ export default function Stats() {
   const startShakeSession = () => {
     setShakeSeconds(300);
     setIsShakeActive(true);
-
     if (shakeIntervalRef.current) clearInterval(shakeIntervalRef.current);
-
     shakeIntervalRef.current = setInterval(() => {
       setShakeSeconds((s) => {
         if (s <= 1) {
-          if (shakeIntervalRef.current !== null) {
-            clearInterval(shakeIntervalRef.current);
-          }
+          if (shakeIntervalRef.current !== null) clearInterval(shakeIntervalRef.current);
           shakeIntervalRef.current = null;
           setIsShakeActive(false);
           return 0;
@@ -115,15 +117,10 @@ export default function Stats() {
     setShakeSeconds(0);
   };
 
-  // ================= CLEANUP =================
   useEffect(() => {
     return () => {
-      if (intervalRef.current !== null) {
-        clearInterval(intervalRef.current);
-      }
-      if (shakeIntervalRef.current !== null) {
-        clearInterval(shakeIntervalRef.current);
-      }
+      if (intervalRef.current !== null) clearInterval(intervalRef.current);
+      if (shakeIntervalRef.current !== null) clearInterval(shakeIntervalRef.current);
     };
   }, []);
 
@@ -132,57 +129,33 @@ export default function Stats() {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem("token");
-
         const profileRes = await fetch("/api/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         if (!profileRes.ok) throw new Error("Profile fetch failed");
-
         const profile: Profile = await profileRes.json();
-
         if (!profile?.email) throw new Error("No email found");
 
-        // ===== Assessments =====
-        const assessRes = await fetch(
-          `/api/assessment?email=${profile.email}`
-        );
-
+        const assessRes = await fetch(`/api/assessment?email=${profile.email}`);
         const assess: AssessmentResponse = await assessRes.json();
-
         if (assess.success && Array.isArray(assess.history)) {
           const sorted = assess.history
-            .sort(
-              (a, b) =>
-                new Date(a.created_at).getTime() -
-                new Date(b.created_at).getTime()
-            )
+            .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
             .slice(-10);
-
           setAssessments(sorted);
         }
 
-        // ===== Sleep =====
-        const sleepRes = await fetch(
-          `/api/sleep?email=${profile.email}`
-        );
-
+        const sleepRes = await fetch(`/api/sleep?email=${profile.email}`);
         const sleep: SleepResponse = await sleepRes.json();
-
         if (sleep.success) setSleepData(sleep.data);
 
-        // ===== Tasks =====
         if (email) {
           const res = await fetch(`/api/tasks?email=${email}`);
           const data: Task[] = await res.json();
-
           const sorted = data.sort((a, b) => b.id - a.id);
-
           setTasks(sorted);
           setRecentTasks(sorted.slice(0, 3));
-
           const weekly = sorted.filter((t) => t.type === TaskType.Weekly).slice(-4);
-
           setWeeklyTasks(weekly);
         }
       } catch (err) {
@@ -191,37 +164,25 @@ export default function Stats() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [email]);
 
   const getSleepDayKey = () => {
     const now = new Date();
-
-    // Clone date
     const adjusted = new Date(now);
-
-    // If before 6 AM → treat as previous day
-    if (now.getHours() < 6) {
-      adjusted.setDate(adjusted.getDate() - 1);
-    }
-
-    return adjusted.toISOString().split("T")[0]; // YYYY-MM-DD
+    if (now.getHours() < 6) adjusted.setDate(adjusted.getDate() - 1);
+    return adjusted.toISOString().split("T")[0];
   };
 
   const [isSleepLocked, setIsSleepLocked] = useState(() => {
     if (typeof window === "undefined") return false;
-
     const last = localStorage.getItem("lastSleepEntry");
     const todayKey = getSleepDayKey();
-
     return last === todayKey;
   });
 
   // ================= DERIVED DATA =================
-  const latest: Assessment | undefined =
-    assessments[assessments.length - 1];
-
+  const latest: Assessment | undefined = assessments[assessments.length - 1];
   const mentalChartData = assessments.map((item) => ({
     score: item.score,
     date: new Date(item.created_at).toLocaleDateString(),
@@ -229,24 +190,16 @@ export default function Stats() {
 
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
-
   const startDate = new Date();
   startDate.setDate(endDate.getDate() - 6);
   startDate.setHours(0, 0, 0, 0);
 
   const sleepChartData = sleepData
     .map((item: SleepEntry) => {
-      const d = new Date(
-        item.created_at ?? item.date ?? item.timestamp ?? ""
-      );
+      const d = new Date(item.created_at ?? item.date ?? item.timestamp ?? "");
       return { ...item, _dateObj: d };
     })
-    .filter(
-      (item) =>
-        item._dateObj &&
-        item._dateObj >= startDate &&
-        item._dateObj <= endDate
-    )
+    .filter((item) => item._dateObj && item._dateObj >= startDate && item._dateObj <= endDate)
     .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime())
     .slice(-7)
     .map((item) => ({
@@ -254,41 +207,28 @@ export default function Stats() {
       date: item._dateObj.toLocaleDateString(),
     }));
 
-  // ================= SAVE SLEEP =================
   const saveSleep = async () => {
     if (!sleepHours || isSleepLocked) return;
-
     try {
       const token = localStorage.getItem("token");
-
       const profile = await fetch("/api/profile", {
         headers: { Authorization: `Bearer ${token}` },
       }).then((r) => r.json());
-
       if (!profile?.email) return;
 
       await fetch("/api/sleep", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: profile.email,
-          hours: Number(sleepHours),
-        }),
+        body: JSON.stringify({ email: profile.email, hours: Number(sleepHours) }),
       });
 
-      // ✅ STORE LOCK
       const key = getSleepDayKey();
       localStorage.setItem("lastSleepEntry", key);
-
       setIsSleepLocked(true);
       setSleepHours("");
 
-      const updated = await fetch(
-        `/api/sleep?email=${profile.email}`
-      ).then((r) => r.json());
-
+      const updated = await fetch(`/api/sleep?email=${profile.email}`).then((r) => r.json());
       if (updated.success) setSleepData(updated.data);
-
     } catch (err) {
       console.error("Sleep save error:", err);
     }
@@ -298,379 +238,360 @@ export default function Stats() {
   const percentage = Math.round((score / 75) * 100);
 
   const getSeverity = () => {
-    if (score <= 9) return { label: "Minimal", color: "text-green-600" };
-    if (score <= 19) return { label: "Mild", color: "text-yellow-500" };
-    if (score <= 29) return { label: "Moderate", color: "text-orange-500" };
-    return { label: "Severe", color: "text-red-500" };
+    if (score <= 9) return { label: "Minimal", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
+    if (score <= 19) return { label: "Mild", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
+    if (score <= 29) return { label: "Moderate", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    return { label: "Severe", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
   };
 
   const severity = getSeverity();
 
   const getMessage = () => {
-    if (score <= 9)
-      return "Your responses indicate minimal signs of depression. Keep maintaining a healthy lifestyle and stay connected with loved ones.";
-    if (score <= 19)
-      return "You may be experiencing mild symptoms. Consider small lifestyle changes and self-care routines.";
-    if (score <= 29)
-      return "Moderate symptoms detected. It may help to talk to someone or seek guidance.";
+    if (score <= 9) return "Your responses indicate minimal signs of depression. Keep maintaining a healthy lifestyle.";
+    if (score <= 19) return "You may be experiencing mild symptoms. Consider small lifestyle changes and self-care.";
+    if (score <= 29) return "Moderate symptoms detected. It may help to talk to someone or seek guidance.";
     return "Severe symptoms detected. Please consider reaching out to a professional for support.";
   };
 
-  // ================= LOADING =================
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center text-gray-500">
-        Loading...
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-500">
+        <div className="w-12 h-12 border-4 border-teal-200 border-t-teal-600 rounded-full animate-spin mb-4"></div>
+        <p className="font-medium">Loading your wellness data...</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#f6f8f7] p-8">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="bg-slate-50 min-h-screen p-6 md:p-8 animate-in fade-in duration-500">
+      {/* Custom CSS for Calendar Theming */}
+      <style jsx global>{`
+        .react-calendar { border: none; font-family: inherit; }
+        .react-calendar__tile { border-radius: 0.5rem; font-size: 0.875rem; }
+        .react-calendar__tile--active { background: #0d9488 !important; color: white; }
+        .react-calendar__tile--active:enabled:hover { background: #0f766e !important; }
+        .react-calendar__tile:enabled:hover { background: #f0fdfa; }
+        .react-calendar__navigation button { color: #0d9488; }
+      `}</style>
+
+      <div className="max-w-7xl mx-auto space-y-8">
+
         {/* HEADER */}
-        <div>
-          <h1 className="text-2xl font-semibold">Welcome back 👋</h1>
-          <p className="text-gray-500 text-sm">
-            Track your mental wellness and sleep patterns daily.
-          </p>
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">Welcome back 👋</h1>
+            <p className="text-slate-500 text-sm mt-1">Track your mental wellness and sleep patterns daily.</p>
+          </div>
+          <div className="hidden md:block text-sm text-slate-400 font-medium">
+            {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+          </div>
         </div>
 
         {/* TOP GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="bg-white rounded-2xl p-4 shadow-xl flex flex-col max-h-fit items-center text-center space-y-2">
 
-            <p className="text-sm text-gray-500">Latest Score</p>
+          {/* SCORE CARD */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-4">
+            <div className="w-full flex justify-between items-center mb-2">
+              <h3 className="font-bold text-slate-700">Mental Health Score</h3>
+              <TrendingUp size={18} className="text-teal-600" />
+            </div>
 
-            <div className="flex gap-6 items-center">
-
-            {/* Circle Progress */}
-            <div className="relative w-28 h-28">
+            <div className="relative w-32 h-32 my-2">
               <svg className="w-full h-full -rotate-90">
+                <circle cx="50%" cy="50%" r="55" stroke="#f1f5f9" strokeWidth="12" fill="none" />
                 <circle
-                  cx="50%"
-                  cy="50%"
-                  r="45"
-                  stroke="#e5e7eb"
-                  strokeWidth="10"
+                  cx="50%" cy="50%" r="55"
+                  stroke="#0d9488"
+                  strokeWidth="12"
                   fill="none"
-                />
-            
-                <circle
-                  cx="50%"
-                  cy="50%"
-                  r="45"
-                  stroke="#2f5d50"
-                  strokeWidth="10"
-                  fill="none"
-                  strokeDasharray={2 * Math.PI * 45}
-                  strokeDashoffset={
-                    2 * Math.PI * 45 * (1 - percentage / 100)
-                  }
+                  strokeDasharray={2 * Math.PI * 55}
+                  strokeDashoffset={2 * Math.PI * 55 * (1 - percentage / 100)}
                   strokeLinecap="round"
+                  className="transition-all duration-1000 ease-out"
                 />
               </svg>
-
-              <div className="absolute inset-0 flex items-center justify-center text-sm font-semibold text-gray-700">
-                {percentage}%
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-3xl font-bold text-slate-800">{percentage}%</span>
+                <span className="text-xs text-slate-400 font-medium">Wellness</span>
               </div>
             </div>
-            {/* Score */}
-            <h2 className="text-4xl font-bold text-[#2f5d50]">
-              {score} <span className="text-gray-400 text-lg">/ 75</span>
-            </h2>
+
+            <div className={`px-3 py-1 rounded-full text-xs font-bold border ${severity.bg} ${severity.color} ${severity.border}`}>
+              {severity.label} Severity
             </div>
 
-            {/* Severity */}
-            <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 bg-green-500 rounded-full" />
-              <p className={`font-medium ${severity.color}`}>
-                {severity.label}
-              </p>
-              <span className="text-gray-400 text-sm">({percentage}%)</span>
-            </div>
-
-            {/* Message */}
-            <p className="text-sm text-gray-600 max-w-xs">
+            <p className="text-sm text-slate-600 leading-relaxed px-4">
               {getMessage()}
             </p>
 
-            {/* Actions */}
             <div className="flex gap-3 w-full pt-2">
-              <button
-                onClick={() => router.push("/assessment")}
-                className="flex-1 border border-gray-300 py-2 rounded-lg text-sm hover:bg-gray-50"
-              >
+              <button onClick={() => router.push("/assessment")} className="flex-1 border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
                 Retake Test
               </button>
-
-              <button
-                onClick={() => router.push("/profile")}
-                className="flex-1 bg-[#2f5d50] text-white py-2 rounded-lg text-sm hover:opacity-90"
-              >
-                View Profile
+              <button onClick={() => router.push("/profile")} className="flex-1 bg-teal-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all">
+                Profile
               </button>
             </div>
-
           </div>
 
-          <div className="flex flex-col gap-4">
-            <div className="bg-[#2f5d50] text-white shadow-lg max-h-fit rounded-2xl p-4 px-6 flex flex-col justify-between relative">
-              {/* Card content when session is not active */}
-              {!isSessionActive && (
-                <>
-                  <div>
-                    <h3 className="text-lg font-semibold">Feeling Overwhelmed?</h3>
-                    <p className="text-sm opacity-80">
-                      Take a 5-minute breathing exercise to reset your nervous system.
-                    </p>
-                  </div>
-                  <button
-                    onClick={startSession}
-                    className="mt-4 bg-white text-[#2f5d50] px-4 py-2 rounded-lg text-sm font-medium w-fit"
-                  >
-                    Start Session
-                  </button>
-                </>
-              )}
+          {/* QUICK ACTIONS (Breathing & Shaking) */}
+          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* Overlay shown while session is active */}
-              {isSessionActive && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
-                  <div className="w-full max-w-md mx-4 text-center text-white">
-                    <h2 className="text-2xl font-semibold mb-4">Breathing Session</h2>
-
-                    {/* Timer display */}
-                    <div className="text-6xl font-bold tracking-wider mb-6">
-                      {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:
-                      {String(secondsLeft % 60).padStart(2, "0")}
-                    </div>
-
-                    {/* Simple breathing cue (optional) */}
-                    <p className="text-sm opacity-80 mb-6">
-                      Breathe in for 4 seconds, hold for 4, breathe out for 6. Repeat.
-                    </p>
-
-                    <div className="flex justify-center gap-4">
-                      <button
-                        onClick={exitSession}
-                        className="bg-white text-[#2f5d50] px-4 py-2 rounded-lg font-medium"
-                      >
-                        Exit
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* SHAKING EXERCISE CARD */}
-            <div className="bg-linear-to-br from-purple-300 to-violet-500 text-white shadow-lg rounded-2xl p-4 px-6 flex flex-col justify-between">
-              {!isShakeActive && (
-                <>
-                  <div>
-                    <h3 className="text-lg font-semibold">Release Stress Fast</h3>
-                    <p className="text-sm opacity-80 ">
-                      Do a 5-minute shaking exercise to release tension from your body.
-                    </p>
-                  </div>
-                  <button
-                    onClick={startShakeSession}
-                    className="mt-4 bg-white text-purple-600 px-4 py-2 rounded-lg text-sm font-medium w-fit"
-                  >
-                    Start Shaking
-                  </button>
-                </>
-              )}
-
-              {isShakeActive && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-95">
-                  <div className="w-full max-w-md mx-4 text-center text-white">
-                    <h2 className="text-2xl font-semibold mb-4">Shaking Exercise</h2>
-
-                    <div className="text-6xl font-bold tracking-wider mb-6">
-                      {String(Math.floor(shakeSeconds / 60)).padStart(2, "0")}:
-                      {String(shakeSeconds % 60).padStart(2, "0")}
-                    </div>
-
-                    <p className="text-sm opacity-80 mb-6">
-                      Shake your hands, wrists, shoulders, and body freely.
-                      Let go of tension. Keep breathing naturally.
-                    </p>
-
-                    <div className="flex justify-center gap-4">
-                      <button
-                        onClick={exitShakeSession}
-                        className="bg-white text-purple-600 px-4 py-2 rounded-lg font-medium"
-                      >
-                        Exit
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white rounded-2xl p-4 shadow-xl">
-            <Calendar
-              value={date}
-              onChange={(val) => setDate(val as Date)}
-              className="border-none! w-full! text-sm"
-              tileClassName="rounded-lg hover:bg-[#e6f0ed]"
-            />
-          </div>
-        </div>
-
-        {/* MIDDLE GRID */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-xl">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="text-[#2f5d50]" />
-                <h2 className="font-medium">Depression test score</h2>
+            {/* Breathing Card */}
+            <div className="bg-linear-to-br from-teal-600 to-emerald-700 rounded-2xl p-6 text-white shadow-lg shadow-teal-500/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Wind size={100} />
               </div>
-              <div className="text-xs text-gray-400">Last 10 assessments</div>
-            </div>
-
-            <div className="h-64">
-              <ResponsiveContainer>
-                <BarChart data={mentalChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" />
-                  <YAxis domain={[0, 75]} />
-                  <Tooltip />
-                  <Bar dataKey="score" fill="#2f5d50" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="space-y-6">
-            <div className="bg-white rounded-2xl p-5 shadow-xl">
-              <div className="flex gap-2">
-                <CheckCircle size={20} />
-              <h3 className="font-medium mb-4" >Weekly Tasks</h3>
-              </div>
-              <div className="space-y-2">
-                {weeklyTasks.length > 0 ? (
-                  weeklyTasks.map((task) => (
-                    <div
-                      key={task.id}
-                      className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors"
-                    >
-                      <CheckCircle
-                        className={
-                          task.completed
-                            ? "text-[#2f5d50] shrink-0"
-                            : "text-gray-300 shrink-0"
-                        }
-                        size={18}
-                      />
-                      <span
-                        className={
-                          task.completed
-                            ? "line-through text-gray-400 text-sm"
-                            : "text-gray-700 text-sm"
-                        }
-                      >
-                        {task.text}
-                      </span>
-                    </div>
-                  ))
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4">
+                    <Wind size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold">Breathing Exercise</h3>
+                  <p className="text-teal-100 text-sm mt-1">Reset your nervous system in 5 mins.</p>
+                </div>
+                {!isSessionActive ? (
+                  <button onClick={startSession} className="mt-4 bg-white text-teal-700 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-teal-50 transition-colors flex items-center gap-2 w-fit">
+                    <Play size={16} fill="currentColor" /> Start Session
+                  </button>
                 ) : (
-                  <p className="text-gray-400 text-sm text-center py-4">No tasks for this week</p>
+                  <div className="mt-4 text-2xl font-mono font-bold bg-black/20 inline-block px-4 py-2 rounded-lg backdrop-blur-sm">
+                    {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Shaking Card */}
+            <div className="bg-linear-to-br from-violet-600 to-purple-700 rounded-2xl p-6 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <Activity size={100} />
+              </div>
+              <div className="relative z-10 flex flex-col h-full justify-between">
+                <div>
+                  <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mb-4">
+                    <Activity size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold">Shaking Exercise</h3>
+                  <p className="text-violet-100 text-sm mt-1">Release physical tension instantly.</p>
+                </div>
+                {!isShakeActive ? (
+                  <button onClick={startShakeSession} className="mt-4 bg-white text-violet-700 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-violet-50 transition-colors flex items-center gap-2 w-fit">
+                    <Play size={16} fill="currentColor" /> Start Shaking
+                  </button>
+                ) : (
+                  <div className="mt-4 text-2xl font-mono font-bold bg-black/20 inline-block px-4 py-2 rounded-lg backdrop-blur-sm">
+                    {String(Math.floor(shakeSeconds / 60)).padStart(2, "0")}:{String(shakeSeconds % 60).padStart(2, "0")}
+                  </div>
                 )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* BOTTOM GRID */}
+        {/* MIDDLE GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* SLEEP TRACKER */}
-          <div className="bg-pink-200 max-h-fit p-6 rounded-2xl shadow-xl">
-            <h2 className="font-medium mb-3">Sleep Tracker</h2>
-            <p className="text-sm text-gray-400 mb-2">Last Night Sleep (hrs)</p>
-            <input
-              type="number"
-              value={sleepHours}
-              onChange={(e) => setSleepHours(e.target.value)}
-              disabled={isSleepLocked}
-              className="w-full bg-gray-100 px-4 py-2 rounded-lg mb-3 disabled:opacity-50"
-              placeholder="7.5"
-            />
 
-            <button
-              onClick={saveSleep}
-              disabled={isSleepLocked}
-              className="w-full bg-[#2f5d50] text-white py-2 rounded-lg disabled:opacity-50"
-            >
-              {isSleepLocked ? "Already Logged Today" : "Save Progress"}
-            </button>
-            {isSleepLocked && (
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                You can log sleep again after 6:00 AM tomorrow.
-              </p>
-            )}
-          </div>
-
-          {/* SLEEP CHART */}
-          <div className="bg-white max-h-fit p-6 rounded-2xl shadow-xl">
-            <h2 className="font-medium mb-3">Sleep History</h2>
-            <div className="h-32">
+          {/* CHART */}
+          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
+                  <TrendingUp size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800">Progress Overview</h3>
+              </div>
+              <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">Last 10 Assessments</span>
+            </div>
+            <div className="h-64">
               <ResponsiveContainer>
-                <BarChart data={sleepChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" hide />
-                  <YAxis hide />
-                  <Tooltip />
-                  <Bar dataKey="hours" fill="#2f5d50" radius={[8, 8, 0, 0]} />
+                <BarChart data={mentalChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
+                  <YAxis tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} domain={[0, 75]} />
+                  <Tooltip 
+                    cursor={{fill: '#f8fafc'}}
+                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="score" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
-          {/* RECENT HISTORY (CONNECTED) */}
-          <div className="bg-[#2f5d50] text-white p-6 max-h-fit rounded-xl shadow-2xl">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle size={20} />
-              <h2 className="font-semibold">Recent Tasks</h2>
+
+          {/* TASKS & CALENDAR */}
+          <div className="space-y-6">
+            {/* Weekly Tasks */}
+            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
+                  <ListTodo size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800">Weekly Goals</h3>
+              </div>
+              <div className="space-y-3">
+                {weeklyTasks.length > 0 ? (
+                  weeklyTasks.map((task) => (
+                    <div key={task.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors group">
+                      <CheckCircle className={`mt-0.5 shrink-0 ${task.completed ? "text-teal-600" : "text-slate-300"}`} size={18} />
+                      <span className={`text-sm ${task.completed ? "line-through text-slate-400" : "text-slate-700 font-medium"}`}>
+                        {task.text}
+                      </span>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-slate-400 text-sm">No active goals this week</p>
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-3">
-              {recentTasks.length > 0 ? (
-                recentTasks.map((task) => (
-                  <div
-                    key={task.id}
-                    className="flex items-center gap-3 p-3 hover:rounded-xl rounded-lg bg-[#f0f4f3] transition-colors"
-                  >
-                    <CheckCircle
-                      className={
-                        task.completed
-                          ? "text-[#2f5d50] shrink-0"
-                          : "text-gray-300 shrink-0"
-                      }
-                      size={18}
-                    />
-                    <span
-                      className={
-                        task.completed
-                          ? "line-through text-gray-400 text-sm"
-                          : "text-gray-700 text-sm"
-                      }
-                    >
-                      {task.text}
-                    </span>
-                  </div>
-                ))
-              ) : (
-                <p className="text-gray-400 text-sm text-center py-4">No recent tasks</p>
+            {/* Calendar */}
+            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+              <Calendar
+                value={date}
+                onChange={(val) => setDate(val as Date)}
+                className="w-full border-none"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* BOTTOM GRID */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+          {/* SLEEP INPUT */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              <Moon size={80} />
+            </div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                  <Moon size={20} />
+                </div>
+                <h3 className="font-bold text-slate-800">Sleep Log</h3>
+              </div>
+              <p className="text-xs text-slate-500 mb-3">How many hours did you sleep last night?</p>
+              <input
+                type="number"
+                value={sleepHours}
+                onChange={(e) => setSleepHours(e.target.value)}
+                disabled={isSleepLocked}
+                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none disabled:opacity-50 mb-3"
+                placeholder="e.g. 7.5"
+              />
+              <button
+                onClick={saveSleep}
+                disabled={isSleepLocked}
+                className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${
+                  isSleepLocked 
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
+                    : "bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/20"
+                }`}
+              >
+                {isSleepLocked ? "Logged for Today" : "Save Sleep Data"}
+              </button>
+              {isSleepLocked && (
+                <p className="text-[10px] text-center text-slate-400 mt-2">
+                  Next entry available after 6:00 AM
+                </p>
               )}
             </div>
           </div>
 
+          {/* SLEEP CHART */}
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800">Sleep History (7 Days)</h3>
+              <span className="text-xs text-slate-400">Avg: {(sleepChartData.reduce((a,b)=>a+b.hours,0) / (sleepChartData.length || 1)).toFixed(1)}h</span>
+            </div>
+            <div className="h-32">
+              <ResponsiveContainer>
+                <BarChart data={sleepChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide domain={[0, 12]} />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="hours" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
         </div>
+
+        {/* RECENT TASKS (Full Width Bottom) */}
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
+              <CheckCircle size={20} />
+            </div>
+            <h3 className="font-bold text-slate-800">Recent Activity</h3>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            {recentTasks.length > 0 ? (
+              recentTasks.map((task) => (
+                <div key={task.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+                  <CheckCircle className={`shrink-0 ${task.completed ? "text-teal-600" : "text-slate-300"}`} size={18} />
+                  <span className={`text-sm truncate ${task.completed ? "line-through text-slate-400" : "text-slate-700 font-medium"}`}>
+                    {task.text}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <p className="text-slate-400 text-sm col-span-full text-center py-4">No recent tasks completed</p>
+            )}
+          </div>
+        </div>
+
       </div>
+
+      {/* ================= IMMERSIVE OVERLAYS ================= */}
+
+      {/* Breathing Overlay */}
+      {isSessionActive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-linear-to-br from-teal-900 to-slate-900 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md mx-4 text-center text-white p-8">
+            <button onClick={exitSession} className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+            <Wind size={64} className="mx-auto mb-6 text-teal-200 animate-pulse" />
+            <h2 className="text-3xl font-light mb-2">Breathe</h2>
+            <p className="text-teal-200 text-sm mb-8">Inhale for 4s, Hold for 4s, Exhale for 6s</p>
+            <div className="text-7xl font-mono font-bold tracking-wider mb-12 text-white drop-shadow-lg">
+              {String(Math.floor(secondsLeft / 60)).padStart(2, "0")}:{String(secondsLeft % 60).padStart(2, "0")}
+            </div>
+            <button onClick={exitSession} className="px-8 py-3 bg-white text-teal-900 rounded-full font-bold hover:scale-105 transition-transform">
+              End Session
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Shaking Overlay */}
+      {isShakeActive && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-linear-to-br from-violet-900 to-slate-900 backdrop-blur-md animate-in fade-in duration-500">
+          <div className="w-full max-w-md mx-4 text-center text-white p-8">
+            <button onClick={exitShakeSession} className="absolute top-6 right-6 p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors">
+              <X size={24} />
+            </button>
+            <Activity size={64} className="mx-auto mb-6 text-violet-200 animate-bounce" />
+            <h2 className="text-3xl font-light mb-2">Shake It Off</h2>
+            <p className="text-violet-200 text-sm mb-8">Move your body freely. Release the tension.</p>
+            <div className="text-7xl font-mono font-bold tracking-wider mb-12 text-white drop-shadow-lg">
+              {String(Math.floor(shakeSeconds / 60)).padStart(2, "0")}:{String(shakeSeconds % 60).padStart(2, "0")}
+            </div>
+            <button onClick={exitShakeSession} className="px-8 py-3 bg-white text-violet-900 rounded-full font-bold hover:scale-105 transition-transform">
+              End Session
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
