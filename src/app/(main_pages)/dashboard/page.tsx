@@ -3,19 +3,17 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
-import { 
-  TrendingUp, 
-  CheckCircle, 
-  Wind, 
-  Activity, 
-  Moon, 
+import {
+  TrendingUp,
+  CheckCircle,
+  Wind,
+  Activity,
+  Moon,
   ListTodo,
   X,
   Play
 } from "lucide-react";
 
-// Assuming these types exist in your project based on previous context
-// If not, you may need to define them or remove the import and use inline types
 import {
   Assessment,
   SleepEntry,
@@ -35,6 +33,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  LineChart,
+  Line,
 } from "recharts";
 import { useRouter } from "next/navigation";
 
@@ -63,6 +63,9 @@ function StatsData() {
   const [isShakeActive, setIsShakeActive] = useState<boolean>(false);
   const [shakeSeconds, setShakeSeconds] = useState<number>(0);
   const shakeIntervalRef = useRef<IntervalRef>(null);
+
+  const [weightData, setWeightData] = useState<any[]>([]);
+  const [weight, setWeight] = useState<string>("");
 
   const router = useRouter();
 
@@ -117,6 +120,50 @@ function StatsData() {
     setShakeSeconds(0);
   };
 
+  // const saveWeight = async () => {
+  //   if (!weight) return;
+
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const profile = await fetch("/api/profile", {
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     }).then((r) => r.json());
+
+  //     if (!profile?.email) return;
+
+  //     await fetch("/api/weight", {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         email: profile.email,
+  //         weight: Number(weight),
+  //       }),
+  //     });
+
+  //     setWeight("");
+
+  //     const updated = await fetch(`/api/weight?email=${profile.email}`).then((r) => r.json());
+  //     if (updated.success) setWeightData(updated.data);
+
+  //   } catch (err) {
+  //     console.error("Weight save error:", err);
+  //   }
+  // };
+
+  const weightChartData = weightData
+    .map((item) => {
+      const d = new Date(item.created_at);
+      return { ...item, _dateObj: d };
+    })
+    .slice(-7)
+    .map((item) => ({
+      weight: item.weight,
+      date: item._dateObj.toLocaleDateString(),
+    }));
+
+
   useEffect(() => {
     return () => {
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
@@ -144,6 +191,11 @@ function StatsData() {
             .slice(-10);
           setAssessments(sorted);
         }
+
+        const weightRes = await fetch(`/api/weight?email=${profile.email}`);
+        const weightJson = await weightRes.json();
+
+        if (weightJson.success) setWeightData(weightJson.data);
 
         const sleepRes = await fetch(`/api/sleep?email=${profile.email}`);
         const sleep: SleepResponse = await sleepRes.json();
@@ -180,6 +232,62 @@ function StatsData() {
     const todayKey = getSleepDayKey();
     return last === todayKey;
   });
+
+  const getWeightDayKey = () => {
+    const now = new Date();
+    const adjusted = new Date(now);
+
+    // same rule as sleep (before 6 AM = previous day)
+    if (now.getHours() < 6) adjusted.setDate(adjusted.getDate() - 1);
+
+    return adjusted.toISOString().split("T")[0];
+  };
+
+  const [isWeightLocked, setIsWeightLocked] = useState(() => {
+    if (typeof window === "undefined") return false;
+
+    const last = localStorage.getItem("lastWeightEntry");
+    const todayKey = getWeightDayKey();
+
+    return last === todayKey;
+  });
+
+  const saveWeight = async () => {
+    if (!weight || isWeightLocked) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const profile = await fetch("/api/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => r.json());
+
+      if (!profile?.email) return;
+
+      await fetch("/api/weight", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: profile.email,
+          weight: Number(weight),
+        }),
+      });
+
+      // ✅ LOCK AFTER SAVE
+      const key = getWeightDayKey();
+      localStorage.setItem("lastWeightEntry", key);
+      setIsWeightLocked(true);
+
+      setWeight("");
+
+      const updated = await fetch(`/api/weight?email=${profile.email}`).then((r) => r.json());
+      if (updated.success) setWeightData(updated.data);
+
+    } catch (err) {
+      console.error("Weight save error:", err);
+    }
+  };
 
   // ================= DERIVED DATA =================
   const latest: Assessment | undefined = assessments[assessments.length - 1];
@@ -291,7 +399,7 @@ function StatsData() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* SCORE CARD */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col items-center text-center space-y-4">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 flex flex-col items-center text-center space-y-4">
             <div className="w-full flex justify-between items-center mb-2">
               <h3 className="font-bold text-slate-700">Mental Health Score</h3>
               <TrendingUp size={18} className="text-teal-600" />
@@ -394,7 +502,7 @@ function StatsData() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
           {/* CHART */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <div className="lg:col-span-2 bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <div className="p-2 bg-teal-50 rounded-lg text-teal-600">
@@ -408,10 +516,10 @@ function StatsData() {
               <ResponsiveContainer>
                 <BarChart data={mentalChartData}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="date" tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
-                  <YAxis tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} domain={[0, 75]} />
-                  <Tooltip 
-                    cursor={{fill: '#f8fafc'}}
+                  <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[0, 75]} />
+                  <Tooltip
+                    cursor={{ fill: '#f8fafc' }}
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
                   <Bar dataKey="score" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={40} />
@@ -423,7 +531,7 @@ function StatsData() {
           {/* TASKS & CALENDAR */}
           <div className="space-y-6">
             {/* Weekly Tasks */}
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+            <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
               <div className="flex items-center gap-2 mb-4">
                 <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                   <ListTodo size={20} />
@@ -449,7 +557,7 @@ function StatsData() {
             </div>
 
             {/* Calendar */}
-            <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100">
+            <div className="bg-white rounded-2xl p-4 shadow-lg border border-slate-100">
               <Calendar
                 value={date}
                 onChange={(val) => setDate(val as Date)}
@@ -463,7 +571,7 @@ function StatsData() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
           {/* SLEEP INPUT */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 relative overflow-hidden">
             <div className="absolute top-0 right-0 p-4 opacity-5">
               <Moon size={80} />
             </div>
@@ -486,11 +594,10 @@ function StatsData() {
               <button
                 onClick={saveSleep}
                 disabled={isSleepLocked}
-                className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  isSleepLocked 
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed" 
-                    : "bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/20"
-                }`}
+                className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${isSleepLocked
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-teal-600 text-white hover:bg-teal-700 shadow-lg shadow-teal-500/20"
+                  }`}
               >
                 {isSleepLocked ? "Logged for Today" : "Save Sleep Data"}
               </button>
@@ -502,40 +609,64 @@ function StatsData() {
             </div>
           </div>
 
-          {/* SLEEP CHART */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 md:col-span-2">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800">Sleep History (7 Days)</h3>
-              <span className="text-xs text-slate-400">Avg: {(sleepChartData.reduce((a,b)=>a+b.hours,0) / (sleepChartData.length || 1)).toFixed(1)}h</span>
+          {/* WEIGHT INPUT */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 relative overflow-hidden">
+            <div className="absolute top-0 right-0 p-4 opacity-5">
+              ⚖️
             </div>
-            <div className="h-32">
-              <ResponsiveContainer>
-                <BarChart data={sleepChartData}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                  <XAxis dataKey="date" hide />
-                  <YAxis hide domain={[0, 12]} />
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-                  />
-                  <Bar dataKey="hours" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
-                </BarChart>
-              </ResponsiveContainer>
+
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 bg-pink-50 rounded-lg text-pink-600">
+                  ⚖️
+                </div>
+                <h3 className="font-bold text-slate-800">Weight Log</h3>
+              </div>
+
+              <p className="text-xs text-slate-500 mb-3">
+                Enter your current weight (kg)
+              </p>
+
+              <input
+                type="number"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+                disabled={isWeightLocked}
+                className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm focus:ring-2 focus:ring-pink-500 outline-none disabled:opacity-50 mb-3"
+                placeholder="e.g. 68"
+              />
+
+              <button
+                onClick={saveWeight}
+                disabled={isWeightLocked}
+                className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${isWeightLocked
+                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                    : "bg-pink-600 text-white hover:bg-pink-700 shadow-lg shadow-pink-500/20"
+                  }`}
+              >
+                {isWeightLocked ? "Logged for Today" : "Save Weight"}
+              </button>
+
+              {isWeightLocked && (
+                <p className="text-[10px] text-center text-slate-400 mt-2">
+                  Next entry available after 6:00 AM
+                </p>
+              )}
             </div>
           </div>
-        </div>
 
-        {/* RECENT TASKS (Full Width Bottom) */}
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          {/* RECENT TASKS (Full Width Bottom) */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
           <div className="flex items-center gap-2 mb-4">
             <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
               <CheckCircle size={20} />
             </div>
             <h3 className="font-bold text-slate-800">Recent Activity</h3>
           </div>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="flex flex-col gap-4">
             {recentTasks.length > 0 ? (
               recentTasks.map((task) => (
-                <div key={task.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex items-center gap-3">
+                <div key={task.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex  items-center gap-3">
                   <CheckCircle className={`shrink-0 ${task.completed ? "text-teal-600" : "text-slate-300"}`} size={18} />
                   <span className={`text-sm truncate ${task.completed ? "line-through text-slate-400" : "text-slate-700 font-medium"}`}>
                     {task.text}
@@ -545,6 +676,62 @@ function StatsData() {
             ) : (
               <p className="text-slate-400 text-sm col-span-full text-center py-4">No recent tasks completed</p>
             )}
+          </div>
+        </div>
+
+          {/* SLEEP CHART */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800">Sleep History (7 Days)</h3>
+              <span className="text-xs text-slate-400">Avg: {(sleepChartData.reduce((a, b) => a + b.hours, 0) / (sleepChartData.length || 1)).toFixed(1)}h</span>
+            </div>
+            <div className="h-32">
+              <ResponsiveContainer>
+                <BarChart data={sleepChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide domain={[0, 12]} />
+                  <Tooltip
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="hours" fill="#6366f1" radius={[4, 4, 0, 0]} barSize={30} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* WEIGHT CHART */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 md:col-span-2">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-800">Weight History (7 Days)</h3>
+              <span className="text-xs text-slate-400">
+                Latest: {weightChartData.slice(-1)[0]?.weight || 0} kg
+              </span>
+            </div>
+
+            <div className="h-32">
+              <ResponsiveContainer>
+                <LineChart data={weightChartData}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="date" hide />
+                  <YAxis hide />
+                  <Tooltip
+                    contentStyle={{
+                      borderRadius: "8px",
+                      border: "none",
+                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="weight"
+                    stroke="#ec4899"
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: "#ec4899" }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
