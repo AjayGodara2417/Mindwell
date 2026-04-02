@@ -35,6 +35,7 @@ import {
   CartesianGrid,
   LineChart,
   Line,
+  Cell,
 } from "recharts";
 import { useRouter } from "next/navigation";
 
@@ -120,43 +121,12 @@ function StatsData() {
     setShakeSeconds(0);
   };
 
-  // const saveWeight = async () => {
-  //   if (!weight) return;
-
-  //   try {
-  //     const token = localStorage.getItem("token");
-  //     const profile = await fetch("/api/profile", {
-  //       headers: { Authorization: `Bearer ${token}` },
-  //     }).then((r) => r.json());
-
-  //     if (!profile?.email) return;
-
-  //     await fetch("/api/weight", {
-  //       method: "POST",
-  //       headers: {
-  //         "Content-Type": "application/json",
-  //       },
-  //       body: JSON.stringify({
-  //         email: profile.email,
-  //         weight: Number(weight),
-  //       }),
-  //     });
-
-  //     setWeight("");
-
-  //     const updated = await fetch(`/api/weight?email=${profile.email}`).then((r) => r.json());
-  //     if (updated.success) setWeightData(updated.data);
-
-  //   } catch (err) {
-  //     console.error("Weight save error:", err);
-  //   }
-  // };
-
   const weightChartData = weightData
     .map((item) => {
       const d = new Date(item.created_at);
       return { ...item, _dateObj: d };
     })
+    .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime()) // ✅ IMPORTANT
     .slice(-7)
     .map((item) => ({
       weight: item.weight,
@@ -171,7 +141,7 @@ function StatsData() {
     };
   }, []);
 
-  // ================= FETCH DATA =================
+  // FETCH DATA
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -289,12 +259,25 @@ function StatsData() {
     }
   };
 
-  // ================= DERIVED DATA =================
+
+  // DERIVED DATA
   const latest: Assessment | undefined = assessments[assessments.length - 1];
-  const mentalChartData = assessments.map((item) => ({
-    score: item.score,
-    date: new Date(item.created_at).toLocaleDateString(),
-  }));
+  const getSeverityFromScore = (score: number) => {
+    if (score <= 9) return { label: "Minimal", color: "#10b981" };
+    if (score <= 19) return { label: "Mild", color: "#eab308" };
+    if (score <= 29) return { label: "Moderate", color: "#f97316" };
+    return { label: "Severe", color: "#ef4444" };
+  };
+
+  const mentalChartData = assessments.map((item) => {
+    const severity = getSeverityFromScore(item.score);
+    return {
+      score: item.score,
+      date: new Date(item.created_at).toLocaleDateString(),
+      severity: severity.label,
+      fill: severity.color,
+    };
+  });
 
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
@@ -359,6 +342,39 @@ function StatsData() {
     if (score <= 19) return "You may be experiencing mild symptoms. Consider small lifestyle changes and self-care.";
     if (score <= 29) return "Moderate symptoms detected. It may help to talk to someone or seek guidance.";
     return "Severe symptoms detected. Please consider reaching out to a professional for support.";
+  };
+
+  const avgSleep =
+    sleepChartData.reduce((a, b) => a + b.hours, 0) /
+    (sleepChartData.length || 1);
+
+  const getSleepInsight = () => {
+    if (avgSleep >= 7)
+      return "Great job! You're maintaining healthy sleep habits.";
+    if (avgSleep >= 5)
+      return "You're getting moderate sleep. Try improving consistency.";
+    return "Low sleep detected. This may impact mental health — prioritize rest.";
+  };
+
+  const getWeightTrend = () => {
+    if (weightChartData.length < 2) return "stable";
+
+    const first = weightChartData[0].weight;
+    const last = weightChartData[weightChartData.length - 1].weight;
+
+    if (last > first + 0.5) return "increasing";
+    if (last < first - 0.5) return "decreasing";
+    return "stable";
+  };
+
+  const getWeightInsight = () => {
+    const trend = getWeightTrend();
+
+    if (trend === "increasing")
+      return "Your weight is trending upward. Monitor diet and activity.";
+    if (trend === "decreasing")
+      return "You're losing weight. Ensure it's healthy and sustainable.";
+    return "Your weight is stable. Keep maintaining your routine.";
   };
 
   if (loading) {
@@ -519,13 +535,46 @@ function StatsData() {
                   <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} domain={[0, 75]} />
                   <Tooltip
-                    cursor={{ fill: '#f8fafc' }}
-                    contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    content={({ active, payload }) => {
+                      if (active && payload && payload.length) {
+                        const data = payload[0].payload;
+                        return (
+                          <div className="bg-white p-3 rounded-lg shadow-md border text-sm">
+                            <p className="font-semibold">{data.date}</p>
+                            <p>Score: {data.score}</p>
+                            <p className="font-medium">Severity: {data.severity}</p>
+                          </div>
+                        );
+                      }
+                      return null;
+                    }}
                   />
-                  <Bar dataKey="score" fill="#0d9488" radius={[6, 6, 0, 0]} barSize={40} />
+                  <Bar dataKey="score" radius={[6, 6, 0, 0]} barSize={40}>
+                    {mentalChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+              {["Minimal", "Mild", "Moderate", "Severe"].map((level) => (
+                <div key={level} className="flex items-center gap-2 bg-slate-50 px-3 py-2 rounded-lg">
+                  <div
+                    className={`w-3 h-3 rounded-full ${level === "Minimal"
+                      ? "bg-emerald-500"
+                      : level === "Mild"
+                        ? "bg-yellow-500"
+                        : level === "Moderate"
+                          ? "bg-orange-500"
+                          : "bg-red-500"
+                      }`}
+                  />
+                  <span className="text-slate-600">{level}</span>
+                </div>
+              ))}
+            </div>
+
           </div>
 
           {/* TASKS & CALENDAR */}
@@ -640,8 +689,8 @@ function StatsData() {
                 onClick={saveWeight}
                 disabled={isWeightLocked}
                 className={`w-full py-2.5 rounded-xl text-sm font-bold transition-all ${isWeightLocked
-                    ? "bg-slate-100 text-slate-400 cursor-not-allowed"
-                    : "bg-pink-600 text-white hover:bg-pink-700 shadow-lg shadow-pink-500/20"
+                  ? "bg-slate-100 text-slate-400 cursor-not-allowed"
+                  : "bg-pink-600 text-white hover:bg-pink-700 shadow-lg shadow-pink-500/20"
                   }`}
               >
                 {isWeightLocked ? "Logged for Today" : "Save Weight"}
@@ -656,28 +705,28 @@ function StatsData() {
           </div>
 
           {/* RECENT TASKS (Full Width Bottom) */}
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
-              <CheckCircle size={20} />
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-orange-50 rounded-lg text-orange-600">
+                <CheckCircle size={20} />
+              </div>
+              <h3 className="font-bold text-slate-800">Recent Activity</h3>
             </div>
-            <h3 className="font-bold text-slate-800">Recent Activity</h3>
+            <div className="flex flex-col gap-4">
+              {recentTasks.length > 0 ? (
+                recentTasks.map((task) => (
+                  <div key={task.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex  items-center gap-3">
+                    <CheckCircle className={`shrink-0 ${task.completed ? "text-teal-600" : "text-slate-300"}`} size={18} />
+                    <span className={`text-sm truncate ${task.completed ? "line-through text-slate-400" : "text-slate-700 font-medium"}`}>
+                      {task.text}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-slate-400 text-sm col-span-full text-center py-4">No recent tasks completed</p>
+              )}
+            </div>
           </div>
-          <div className="flex flex-col gap-4">
-            {recentTasks.length > 0 ? (
-              recentTasks.map((task) => (
-                <div key={task.id} className="p-4 rounded-xl bg-slate-50 border border-slate-100 flex  items-center gap-3">
-                  <CheckCircle className={`shrink-0 ${task.completed ? "text-teal-600" : "text-slate-300"}`} size={18} />
-                  <span className={`text-sm truncate ${task.completed ? "line-through text-slate-400" : "text-slate-700 font-medium"}`}>
-                    {task.text}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-slate-400 text-sm col-span-full text-center py-4">No recent tasks completed</p>
-            )}
-          </div>
-        </div>
 
           {/* SLEEP CHART */}
           <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 md:col-span-2">
@@ -698,6 +747,9 @@ function StatsData() {
                 </BarChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-xs text-slate-500 mt-3">
+              {getSleepInsight()}
+            </p>
           </div>
 
           {/* WEIGHT CHART */}
@@ -716,22 +768,21 @@ function StatsData() {
                   <XAxis dataKey="date" hide />
                   <YAxis hide />
                   <Tooltip
-                    contentStyle={{
-                      borderRadius: "8px",
-                      border: "none",
-                      boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                    }}
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="weight"
                     stroke="#ec4899"
                     strokeWidth={3}
-                    dot={{ r: 4, fill: "#ec4899" }}
+                    dot={{ r: 4 }}
                   />
                 </LineChart>
               </ResponsiveContainer>
             </div>
+            <p className="text-xs text-slate-500 mt-3">
+              {getWeightInsight()}
+            </p>
           </div>
         </div>
 
