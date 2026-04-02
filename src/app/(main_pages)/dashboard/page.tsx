@@ -23,6 +23,7 @@ import {
   SleepResponse,
   IntervalRef,
   TaskType,
+  WeightEntry,
 } from "@/types/dashboard";
 
 import {
@@ -65,7 +66,7 @@ function StatsData() {
   const [shakeSeconds, setShakeSeconds] = useState<number>(0);
   const shakeIntervalRef = useRef<IntervalRef>(null);
 
-  const [weightData, setWeightData] = useState<any[]>([]);
+  const [weightData, setWeightData] = useState<WeightEntry[]>([]);
   const [weight, setWeight] = useState<string>("");
 
   const router = useRouter();
@@ -122,16 +123,16 @@ function StatsData() {
   };
 
   const weightChartData = weightData
-    .map((item) => {
-      const d = new Date(item.created_at);
-      return { ...item, _dateObj: d };
-    })
-    .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime()) // ✅ IMPORTANT
-    .slice(-7)
-    .map((item) => ({
-      weight: item.weight,
-      date: item._dateObj.toLocaleDateString(),
-    }));
+  .map((item: WeightEntry) => {
+    const d = new Date(item.created_at || item.date || item.timestamp || "");
+    return { ...item, _dateObj: d };
+  })
+  .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime())
+  .slice(-7)
+  .map((item) => ({
+    weight: item.weight,
+    date: item._dateObj.toLocaleDateString(),
+  }));
 
 
   useEffect(() => {

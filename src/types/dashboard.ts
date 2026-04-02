@@ -12,6 +12,15 @@ export interface SleepEntry {
   timestamp?: string;
 }
 
+
+export type WeightEntry = {
+  id: number;
+  weight: number;
+  created_at?: string;
+  date?: string;
+  timestamp?: string;
+};
+
 export enum TaskType {
   Weekly = "weekly",
   Daily = "daily",
