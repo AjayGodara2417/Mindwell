@@ -99,11 +99,14 @@ export default function PatientDetails() {
         }
 
         if (data2.success) {
-          const formatted = data2.data.map((s: Sleep, i: number) => ({
-            ...s,
-            date: new Date(s.created_at).toLocaleDateString(),
-            index: i + 1,
-          }));
+          const formatted = data2.data.map((s: Sleep, i: number) => {
+            const d = new Date(s.created_at);
+            return {
+              ...s,
+              date: `${d.getDate()}/${d.getMonth() + 1}`, // ✅ DD/MM format
+              index: i + 1,
+            };
+          });
           setSleepData(formatted);
         }
         if (data3.success) {
@@ -112,11 +115,14 @@ export default function PatientDetails() {
               (a: Memory, b: Memory) =>
                 new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
             )
-            .map((m: Memory, i: number) => ({
-              ...m,
-              date: new Date(m.created_at!).toLocaleDateString(),
-              index: i + 1,
-            }));
+            .map((m: Memory, i: number) => {
+              const d = new Date(m.created_at!);
+              return {
+                ...m,
+                date: `${d.getDate()}/${d.getMonth() + 1}`,
+                index: i + 1,
+              };
+            });
 
           setMemoryData(formatted);
         }
@@ -141,11 +147,14 @@ export default function PatientDetails() {
                 new Date(a.created_at!).getTime() -
                 new Date(b.created_at!).getTime()
             )
-            .map((r: Rating, i: number) => ({
-              ...r,
-              date: new Date(r.created_at!).toLocaleDateString(),
-              index: i + 1,
-            }));
+            .map((r: Rating, i: number) => {
+              const d = new Date(r.created_at!);
+              return {
+                ...r,
+                date: `${d.getDate()}/${d.getMonth() + 1}`,
+                index: i + 1,
+              };
+            });
 
           setRatingData(formatted);
         }
@@ -221,7 +230,12 @@ export default function PatientDetails() {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="index" hide />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12, fill: '#94a3b8' }}
+                  axisLine={false}
+                  tickLine={false}
+                />
                 <YAxis hide domain={[0, 100]} />
                 <Tooltip
                   contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
@@ -332,7 +346,12 @@ export default function PatientDetails() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={memoryData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="index" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+              />
               <YAxis />
               <Tooltip />
 
@@ -393,7 +412,7 @@ export default function PatientDetails() {
                 Thoughts
               </p>
               <p className="text-sm text-slate-700 mt-1 italic">
-                "{latestSubjective.thoughts || "No notes"}"
+                {latestSubjective.thoughts || "No notes"}
               </p>
             </div>
 
@@ -456,7 +475,12 @@ export default function PatientDetails() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={ratingData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-              <XAxis dataKey="index" />
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 12, fill: '#94a3b8' }}
+                axisLine={false}
+                tickLine={false}
+              />
               <YAxis domain={[0, 10]} />
               <Tooltip />
 
@@ -492,7 +516,7 @@ export default function PatientDetails() {
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={sleepData}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="index" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="date" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
