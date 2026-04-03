@@ -59,7 +59,7 @@ export default function ProfilePage() {
 
   const stats = [
     { label: "Wellness Points", value: points, icon: Award, color: "text-amber-600", bg: "bg-amber-50" },
-    { label: "Tasks Completed", value: tasksCompleted, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },       
+    { label: "Tasks Completed", value: tasksCompleted, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
     { label: "Assessments", value: assessments.length, icon: Activity, color: "text-blue-600", bg: "bg-blue-50" },
   ];
 
@@ -72,6 +72,61 @@ export default function ProfilePage() {
       severity: item.severity,
     };
   });
+
+  const latestAssessment = assessments[assessments.length - 1];
+
+  const getSeverityMeta = (score: number) => {
+    if (score <= 9) {
+      return {
+        label: "Minimal",
+        color: "text-emerald-600",
+        bg: "bg-emerald-50",
+        tips: [
+          "Maintain your current healthy routine",
+          "Keep tracking sleep and activity",
+          "Practice mindfulness occasionally",
+        ],
+      };
+    }
+    if (score <= 19) {
+      return {
+        label: "Mild",
+        color: "text-yellow-600",
+        bg: "bg-yellow-50",
+        tips: [
+          "Improve sleep consistency",
+          "Add light physical activity (walks, yoga)",
+          "Talk to a friend or journal your thoughts",
+        ],
+      };
+    }
+    if (score <= 29) {
+      return {
+        label: "Moderate",
+        color: "text-orange-600",
+        bg: "bg-orange-50",
+        tips: [
+          "Consider speaking to a counselor",
+          "Follow a structured daily routine",
+          "Reduce screen time and stress triggers",
+        ],
+      };
+    }
+    return {
+      label: "Severe",
+      color: "text-red-600",
+      bg: "bg-red-50",
+      tips: [
+        "Seek professional help immediately",
+        "Reach out to trusted people",
+        "Avoid isolation and monitor mental state closely",
+      ],
+    };
+  };
+
+  const severityMeta = latestAssessment
+    ? getSeverityMeta(latestAssessment.score)
+    : null;
 
   return (
     <div className="bg-slate-50 min-h-screen p-6 md:p-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -182,11 +237,11 @@ export default function ProfilePage() {
                     type="number"
                     domain={["dataMin", "dataMax"]}
                     tickFormatter={(tick) => new Date(tick).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                    tick={{fontSize: 12, fill: '#94a3b8'}}
+                    tick={{ fontSize: 12, fill: '#94a3b8' }}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <YAxis domain={[0, 75]} tick={{fontSize: 12, fill: '#94a3b8'}} axisLine={false} tickLine={false} />
+                  <YAxis domain={[0, 75]} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
                   <Tooltip
                     contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
                     labelFormatter={(label) => new Date(label).toLocaleDateString("en-US", { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -205,6 +260,44 @@ export default function ProfilePage() {
             </div>
           )}
         </div>
+        {latestAssessment && severityMeta && (
+          <div className="mt-6 space-y-4">
+
+            {/* Severity Badge */}
+            <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold border ${severityMeta.bg} ${severityMeta.color}`}>
+              Current Severity: {severityMeta.label}
+            </div>
+
+            {/* Score Summary */}
+            <p className="text-sm text-slate-600">
+              Your latest assessment score is{" "}
+              <span className="font-semibold text-slate-800">
+                {latestAssessment.score} / 75
+              </span>. This indicates a{" "}
+              <span className={`font-semibold ${severityMeta.color}`}>
+                {severityMeta.label}
+              </span>{" "}
+              level of mental health condition.
+            </p>
+
+            {/* Suggestions */}
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
+              <h4 className="text-sm font-semibold text-slate-700 mb-2">
+                Suggested Actions
+              </h4>
+
+              <ul className="space-y-2">
+                {severityMeta.tips.map((tip, idx) => (
+                  <li key={idx} className="flex items-start gap-2 text-sm text-slate-600">
+                    <span className="mt-1 w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                    {tip}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+          </div>
+        )}
 
       </div>
     </div>
