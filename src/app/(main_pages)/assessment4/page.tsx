@@ -33,6 +33,9 @@ function SliderCard({
       if (value <= 7) return { text: "Manageable", emoji: "🙂" };
       return { text: "High stress", emoji: "😣" };
     }
+
+    // Default case to ensure function always returns a value
+    return { text: "Unknown", emoji: "❓" };
   };
 
   const feedback = getFeedback();
@@ -100,7 +103,7 @@ export default function AssessmentFour() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
 
       <div className="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 space-y-8">
 
@@ -124,7 +127,7 @@ export default function AssessmentFour() {
         {/* CTA */}
         <button
           onClick={handleSubmit}
-          className="w-full bg-gradient-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+          className="w-full bg-linear-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
         >
           See My Results
         </button>

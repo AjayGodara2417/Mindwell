@@ -137,7 +137,7 @@ export default function ProfilePage() {
 
           {/* Profile Card */}
           <div className="md:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-center gap-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
+            <div className="w-20 h-20 rounded-2xl bg-linear-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-lg shadow-teal-500/20">
               <User2 size={32} />
             </div>
             <div className="flex-1">

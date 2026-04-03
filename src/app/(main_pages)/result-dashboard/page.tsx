@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
-import { Activity, TrendingUp, Calendar, MessageSquare, BookOpen } from "lucide-react";
+import { Activity, TrendingUp, Calendar } from "lucide-react";
 
 function RadialProgress({ value, size = 120 }: { value: number; size?: number }) {
   const radius = 55;
@@ -12,7 +12,7 @@ function RadialProgress({ value, size = 120 }: { value: number; size?: number })
   const strokeDashoffset = circumference - (value / 100) * circumference;
 
   return (
-    <svg height={size} width={size} className="block rotate-[-90deg]">
+    <svg height={size} width={size} className="block rotate-90">
       <circle stroke="#f1f5f9" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={size / 2} cy={size / 2} />
       <circle
         stroke="#0d9488"
@@ -26,7 +26,7 @@ function RadialProgress({ value, size = 120 }: { value: number; size?: number })
         strokeDashoffset={strokeDashoffset}
         className="transition-all duration-1000 ease-out"
       />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="fill-slate-800 font-bold text-xl rotate-[90deg]">
+      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" className="fill-slate-800 font-bold text-xl rotate-90">
         {value}%
       </text>
     </svg>
@@ -98,6 +98,9 @@ function Metric({
       if (value <= 7) return { text: "Moderate", emoji: "🙂", color: "bg-amber-400" };
       return { text: "High", emoji: "😣", color: "bg-red-500" };
     }
+
+    // Default case to ensure a return value
+    return { text: "Unknown", emoji: "❓", color: "bg-gray-400" };
   };
 
   const config = getConfig();
@@ -251,7 +254,7 @@ function ResultDashboardContent() {
                 {/* Primary */}
                 <button
                   onClick={() => router.push("/dashboard")}
-                  className="px-4 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-teal-500 to-teal-600 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+                  className="px-4 py-2.5 text-sm font-medium text-white bg-linear-to-r from-teal-500 to-teal-600 rounded-xl shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
                 >
                   Go to Dashboard
                 </button>
@@ -421,7 +424,7 @@ function ResultDashboardContent() {
 
               <div className="space-y-4">
                 <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="mt-1 min-w-[24px]">
+                  <div className="mt-1 min-w-6">
                     <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">1</div>
                   </div>
                   <div>
@@ -432,7 +435,7 @@ function ResultDashboardContent() {
                 </div>
 
                 <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="mt-1 min-w-[24px]">
+                  <div className="mt-1 min-w-6">
                     <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">2</div>
                   </div>
                   <div>
@@ -443,7 +446,7 @@ function ResultDashboardContent() {
                 </div>
 
                 <div className="flex items-start gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="mt-1 min-w-[24px]">
+                  <div className="mt-1 min-w-6">
                     <div className="w-6 h-6 rounded-full bg-teal-100 text-teal-600 flex items-center justify-center font-bold text-xs">3</div>
                   </div>
                   <div>
