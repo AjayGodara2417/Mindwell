@@ -9,6 +9,8 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@openrouter/sdk": "^0.11.2",
     "bcryptjs": "^3.0.3",
     "face-api.js": "^0.22.2",
     "framer-motion": "^12.38.0",

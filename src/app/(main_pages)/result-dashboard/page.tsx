@@ -3,6 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { Activity, TrendingUp, Calendar } from "lucide-react";
+import AIChatBox from "../../../../components/AIChatBot";
 
 function RadialProgress({ value, size = 120 }: { value: number; size?: number }) {
   const radius = 55;
@@ -457,6 +458,19 @@ function ResultDashboardContent() {
                 </div>
               </div>
             </div>
+
+            <AIChatBox
+              context={{
+                score,
+                severity: level,
+                memoryLevel,
+                mood,
+                financial,
+                moodScore,
+                energy,
+                stress,
+              }}
+            />
 
           </section>
         </main>
