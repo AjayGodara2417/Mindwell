@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
@@ -34,7 +34,6 @@ function SliderCard({
       return { text: "High stress", emoji: "😣" };
     }
 
-    // Default case to ensure function always returns a value
     return { text: "Unknown", emoji: "❓" };
   };
 
@@ -45,7 +44,6 @@ function SliderCard({
       whileHover={{ scale: 1.01 }}
       className="bg-slate-50 p-5 rounded-2xl border border-slate-100 space-y-4"
     >
-      {/* Header */}
       <div className="flex justify-between items-center">
         <span className="font-semibold text-slate-700">{label}</span>
 
@@ -55,7 +53,6 @@ function SliderCard({
         </div>
       </div>
 
-      {/* Slider */}
       <input
         type="range"
         min="0"
@@ -65,7 +62,6 @@ function SliderCard({
         className="w-full accent-teal-600 cursor-pointer"
       />
 
-      {/* Scale */}
       <div className="flex justify-between text-xs text-slate-400">
         <span>0</span>
         <span>5</span>
@@ -75,7 +71,7 @@ function SliderCard({
   );
 }
 
-export default function AssessmentFour() {
+function AssessmentFourInner() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -104,10 +100,8 @@ export default function AssessmentFour() {
 
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
-
       <div className="w-full max-w-xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 space-y-8">
 
-        {/* Header */}
         <div className="text-center">
           <h1 className="text-2xl font-bold text-slate-800">
             How are you feeling right now?
@@ -117,14 +111,12 @@ export default function AssessmentFour() {
           </p>
         </div>
 
-        {/* Sliders */}
         <div className="space-y-5">
           <SliderCard label="Mood" value={mood} setValue={setMood} type="mood" />
           <SliderCard label="Energy Level" value={energy} setValue={setEnergy} type="energy" />
           <SliderCard label="Stress Level" value={stress} setValue={setStress} type="stress" />
         </div>
 
-        {/* CTA */}
         <button
           onClick={handleSubmit}
           className="w-full bg-linear-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
@@ -134,5 +126,13 @@ export default function AssessmentFour() {
 
       </div>
     </div>
+  );
+}
+
+export default function AssessmentFour() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AssessmentFourInner />
+    </Suspense>
   );
 }

@@ -2,6 +2,7 @@ export interface Assessment {
   id: number;
   score: number;
   created_at: string;
+  mood: number | string;
 }
 
 export interface SleepEntry {

@@ -398,6 +398,14 @@ function StatsData() {
     mood: latest?.mood || "unknown",
     recentScoreTrend: mentalChartData.slice(-5),
   };
+  const userData = {
+    score,
+    severity: severity.label,
+    sleepAvg: avgSleep,
+    weightTrend: getWeightTrend(),
+    mood: latest?.mood || "unknown",
+    recentScoreTrend: mentalChartData.slice(-5),
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen p-6 md:p-8 animate-in fade-in duration-500">

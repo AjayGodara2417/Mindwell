@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
-export default function AssessmentThree() {
+function AssessmentThreeInner() {
   const router = useRouter();
   const params = useSearchParams();
 
@@ -43,15 +43,14 @@ export default function AssessmentThree() {
     });
 
     router.push(
-  `/assessment4?score=${baseScore}&memoryLevel=${memoryLevel}&mood=${form.mood}&financial=${form.financial}`
-);
+      `/assessment4?score=${baseScore}&memoryLevel=${memoryLevel}&mood=${form.mood}&financial=${form.financial}`
+    );
   };
 
   return (
     <div className="min-h-screen bg-slate-50 flex justify-center items-center p-6">
       <div className="w-full max-w-2xl bg-white p-8 rounded-3xl shadow-xl border border-slate-100 space-y-8">
 
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-slate-800">
             Final Check-in
@@ -61,7 +60,6 @@ export default function AssessmentThree() {
           </p>
         </div>
 
-        {/* Illness */}
         <div>
           <label className="text-sm font-semibold text-slate-700">
             Any illness recently?
@@ -76,7 +74,6 @@ export default function AssessmentThree() {
           />
         </div>
 
-        {/* Thoughts */}
         <div>
           <label className="text-sm font-semibold text-slate-700">
             What’s on your mind?
@@ -91,7 +88,6 @@ export default function AssessmentThree() {
           />
         </div>
 
-        {/* Financial Stress */}
         <div>
           <label className="text-sm font-semibold text-slate-700">
             Financial Stress
@@ -116,7 +112,6 @@ export default function AssessmentThree() {
           </div>
         </div>
 
-        {/* Mood */}
         <div>
           <label className="text-sm font-semibold text-slate-700">
             Your Mood Today
@@ -143,7 +138,6 @@ export default function AssessmentThree() {
           </div>
         </div>
 
-        {/* Submit */}
         <button
           onClick={handleSubmit}
           className="w-full bg-teal-600 text-white py-3 rounded-xl font-medium hover:bg-teal-700 transition"
@@ -152,5 +146,13 @@ export default function AssessmentThree() {
         </button>
       </div>
     </div>
+  );
+}
+
+export default function AssessmentThree() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AssessmentThreeInner />
+    </Suspense>
   );
 }

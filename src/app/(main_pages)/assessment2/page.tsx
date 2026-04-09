@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 
 const colors = ["green", "red", "yellow", "blue"];
 
-export default function SimonGame() {
+function SimonGameInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const baseScore = Number(searchParams.get("score")) || 0;
@@ -18,7 +18,6 @@ export default function SimonGame() {
   const [level, setLevel] = useState(1);
   const [gameOver, setGameOver] = useState(false);
 
-  // Start Game
   const startGame = () => {
     setSequence([]);
     setUserInput([]);
@@ -34,7 +33,6 @@ export default function SimonGame() {
     playSequence(next);
   };
 
-  // Play animation
   const playSequence = async (seq: number[]) => {
     setIsPlaying(true);
 
@@ -48,27 +46,23 @@ export default function SimonGame() {
     setIsPlaying(false);
   };
 
-  // User click
   const handleClick = (index: number) => {
     if (isPlaying || gameOver) return;
 
     const newInput = [...userInput, index];
     setUserInput(newInput);
 
-    // Check correctness
     if (sequence[newInput.length - 1] !== index) {
       setGameOver(true);
       return;
     }
 
-    // Round complete
     if (newInput.length === sequence.length) {
       setLevel((prev) => prev + 1);
       setTimeout(() => nextRound(sequence), 800);
     }
   };
 
-  // Finish Game
   useEffect(() => {
     if (gameOver) {
       const memoryScore = level * 5;
@@ -87,11 +81,7 @@ export default function SimonGame() {
           }),
         });
 
-        // redirect WITHOUT merging scores
-        router.push(
-          `/assessment3?score=${baseScore}&memoryLevel=${level}`
-        );
-        // router.push(`/result-dashboard?score=${baseScore}&memoryLevel=${level}`);
+        router.push(`/assessment3?score=${baseScore}&memoryLevel=${level}`);
       };
 
       setTimeout(saveMemoryScore, 1500);
@@ -100,7 +90,6 @@ export default function SimonGame() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">
-
       <div className="text-center mb-6">
         <h1 className="text-3xl font-bold text-slate-800">
           Memory Test
@@ -110,13 +99,11 @@ export default function SimonGame() {
         </p>
       </div>
 
-      {/* Score & Level */}
       <div className="flex gap-6 mb-6 text-sm text-slate-600">
         <span>Level: {level}</span>
         <span>Base Score: {baseScore}</span>
       </div>
 
-      {/* Game Grid */}
       <div className="grid grid-cols-2 gap-4">
         {colors.map((color, index) => (
           <motion.div
@@ -136,7 +123,6 @@ export default function SimonGame() {
         ))}
       </div>
 
-      {/* Controls */}
       {!sequence.length && !gameOver && (
         <button
           onClick={startGame}
@@ -146,7 +132,6 @@ export default function SimonGame() {
         </button>
       )}
 
-      {/* Game Over */}
       {gameOver && (
         <div className="mt-8 text-center">
           <h2 className="text-xl font-semibold text-red-500">
@@ -158,5 +143,13 @@ export default function SimonGame() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SimonGame() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SimonGameInner />
+    </Suspense>
   );
 }

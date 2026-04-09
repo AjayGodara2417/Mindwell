@@ -1,3 +1,7 @@
+import { NextResponse } from "next/server";
+import db from "@/lib/db";
+
+
 export async function PUT(req: Request) {
   const { id, completed, email } = await req.json();
 
