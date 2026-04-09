@@ -323,17 +323,18 @@ DB_SSL_CA=from aiven
 ### 5️⃣ Connect to AI
 Open an account on the openrouter and get api key
 Add the api key to .env file
+
 ```bash
 OPENROUTER_API_KEY=your_api_key
 ```
 
-### 5️⃣ Run Development Server
+### 6️⃣ Run Development Server
 
 ```bash
 npm run dev
 ```
 
-### 5️⃣ Open App
+### 7️⃣ Open App
 
 Open in web:
 ```bash
@@ -373,5 +374,6 @@ Backend verifies token
 
 ## 🧑‍💻 **Author**
 
-**Ajay Godara**
-Full stack web Developer (Next.js + Tailwind + MySQL)
+***Ajay Godara***
+Full stack web Developer (Next.js + Tailwind + MySQL + MERN stack + React Native)
+[Github](https://github.com/AjayGodara2417/)
