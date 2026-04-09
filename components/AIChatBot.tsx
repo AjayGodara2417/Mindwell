@@ -31,7 +31,7 @@ export default function AIChatBox({ context }: Props) {
         method: "POST",
         body: JSON.stringify({
           message: input,
-          context,
+          userData: context,
         }),
       });
 

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef, Suspense } from "react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
+import AIChatModal from "../../../../components/AIChatModal";
 import {
   TrendingUp,
   CheckCircle,
@@ -57,6 +58,8 @@ function StatsData() {
   const [sleepHours, setSleepHours] = useState<string>("");
   const [date, setDate] = useState<Date>(new Date());
   const [loading, setLoading] = useState<boolean>(true);
+
+  const [isAIOpen, setIsAIOpen] = useState(false);
 
   const [isSessionActive, setIsSessionActive] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -123,16 +126,16 @@ function StatsData() {
   };
 
   const weightChartData = weightData
-  .map((item: WeightEntry) => {
-    const d = new Date(item.created_at || item.date || item.timestamp || "");
-    return { ...item, _dateObj: d };
-  })
-  .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime())
-  .slice(-7)
-  .map((item) => ({
-    weight: item.weight,
-    date: item._dateObj.toLocaleDateString(),
-  }));
+    .map((item: WeightEntry) => {
+      const d = new Date(item.created_at || item.date || item.timestamp || "");
+      return { ...item, _dateObj: d };
+    })
+    .sort((a, b) => a._dateObj.getTime() - b._dateObj.getTime())
+    .slice(-7)
+    .map((item) => ({
+      weight: item.weight,
+      date: item._dateObj.toLocaleDateString(),
+    }));
 
 
   useEffect(() => {
@@ -140,7 +143,7 @@ function StatsData() {
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       if (shakeIntervalRef.current !== null) clearInterval(shakeIntervalRef.current);
     };
-  }, []);
+ console.log("AI DATA:", userData); }, []);
 
   // FETCH DATA
   useEffect(() => {
@@ -386,6 +389,15 @@ function StatsData() {
       </div>
     );
   }
+
+  const aiUserData = {
+    score,
+    severity: severity.label,
+    sleepAvg: avgSleep,
+    weightTrend: getWeightTrend(),
+    mood: latest?.mood || "unknown",
+    recentScoreTrend: mentalChartData.slice(-5),
+  };
 
   return (
     <div className="bg-slate-50 min-h-screen p-6 md:p-8 animate-in fade-in duration-500">
@@ -831,6 +843,18 @@ function StatsData() {
         </div>
       )}
 
+      {/* Floating AI Button */}
+      <button
+        onClick={() => setIsAIOpen(true)}
+        className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-teal-500 to-emerald-600 text-white shadow-xl flex items-center justify-center hover:scale-110 transition-all animate-pulse"
+      >
+        🤖
+      </button>
+      <AIChatModal
+        isOpen={isAIOpen}
+        onClose={() => setIsAIOpen(false)}
+        userData={aiUserData}
+      />
     </div>
   );
 }
