@@ -80,17 +80,53 @@ function AssessmentFourInner() {
   const moodText = params.get("mood");
   const financial = params.get("financial");
 
+  // 🔥 NEW: get data from previous step
+  const illness = params.get("illness");
+  const thoughts = params.get("thoughts");
+
   const [mood, setMood] = useState(5);
   const [energy, setEnergy] = useState(5);
   const [stress, setStress] = useState(5);
 
+  // 🔒 prevent duplicate submissions
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async () => {
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const email = localStorage.getItem("userEmail");
 
-    await fetch("/api/rating-assessment", {
+    const scoreNum = Number(score);
+    const percentage = (scoreNum / 75) * 100;
+
+    let severity = "";
+    if (scoreNum <= 15) severity = "Minimal";
+    else if (scoreNum <= 30) severity = "Mild";
+    else if (scoreNum <= 45) severity = "Moderate";
+    else if (scoreNum <= 60) severity = "Severe";
+    else severity = "Very Severe";
+
+    await fetch("/api/final-assessment", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, mood, energy, stress }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        score: scoreNum,
+        percentage,
+        severity,
+        memoryLevel,
+        memoryScore: Number(memoryLevel) * 5,
+        illness,
+        thoughts,
+        financial,
+        moodText,
+        moodScore: mood,
+        energy,
+        stress,
+      }),
     });
 
     router.push(
@@ -119,9 +155,10 @@ function AssessmentFourInner() {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-linear-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all"
+          disabled={isSubmitting}
+          className="w-full bg-linear-to-r from-teal-500 to-teal-600 text-white py-3 rounded-xl font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all disabled:opacity-50"
         >
-          See My Results
+          {isSubmitting ? "Submitting..." : "See My Results"}
         </button>
 
       </div>
