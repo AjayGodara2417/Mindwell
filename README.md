@@ -196,6 +196,57 @@ CREATE TABLE sleep_logs (
 );
 ```
 
+### 📌 `memory assessment`
+
+```sql
+CREATE TABLE memory_assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_email VARCHAR(255) NOT NULL,
+  level INT NOT NULL,
+  score INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 📌 `subjective assessment`
+
+```sql
+CREATE TABLE subjective_assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_email VARCHAR(255) NOT NULL,
+  illness TEXT,
+  thoughts TEXT,
+  financial_stress VARCHAR(50),
+  mood VARCHAR(50),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+### 📌 `self rating`
+
+```sql
+CREATE TABLE rating_assessments (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  patient_email VARCHAR(255),
+  mood INT,
+  energy INT,
+  stress INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+
+### 📌 `weight logs`
+
+```sql
+CREATE TABLE weight_logs (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_email VARCHAR(255),
+  weight FLOAT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
 ## 📊 **Charts Implementation**
 
 Library: `recharts`
