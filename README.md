@@ -274,20 +274,17 @@ npm i recharts
 fork this repository
 ```
 
+Run this in you terminal
 ```bash
 git clone 'forked repository link'
 ```
 
-After Installation, enter the directory and run:
+
+### 2️⃣ Install dependencies
+After fork, enter the directory and run:
 
 ```bash
 npm install
-```
-
-### 2️⃣ Run the app
-
-```bash
-npm run dev
 ```
 
 ---
@@ -299,22 +296,45 @@ Create an environment variable file:
 Add the following to the file
 
 ```bash
-NEXT_PUBLIC_ML_API_URL=http://localhost:5000
 JWT_SECRET= your_secret_key
-
 DB_HOST= localhost
 DB_USER= root
 DB_PASSWORD= your_password
 DB_NAME= mental_health
 ```
 
-### 4️⃣ Run Development Server
+if using localhost, make changes in the ```bash lib\db.ts file``` accordingly.
+Else use Aiven
+
+### 4️⃣ Aiven
+Go to aiven platform and login
+Create a free mysql service and connect it through your mysql workbench
+Now create a database and add the tables listed above.
+
+```bash
+DB_HOST=from aiven
+DB_PORT=from aiven
+DB_USER=from aiven
+DB_PASSWORD=from aiven
+DB_NAME=from aiven
+DB_SSL_CA=from aiven
+```
+
+### 5️⃣ Connect to AI
+Open an account on the openrouter and get api key
+Add the api key to .env file
+
+```bash
+OPENROUTER_API_KEY=your_api_key
+```
+
+### 6️⃣ Run Development Server
 
 ```bash
 npm run dev
 ```
 
-### 5️⃣ Open App
+### 7️⃣ Open App
 
 Open in web:
 ```bash
@@ -354,5 +374,6 @@ Backend verifies token
 
 ## 🧑‍💻 **Author**
 
-**Ajay Godara**
-Full stack web Developer (Next.js + Tailwind + MySQL)
+***Ajay Godara***
+Full stack web Developer (Next.js + Tailwind + MySQL + MERN stack + React Native)
+[Github](https://github.com/AjayGodara2417/)
