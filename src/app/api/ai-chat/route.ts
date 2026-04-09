@@ -1,71 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 
-export const runtime = "nodejs"; // important
+export async function POST(req: Request) {
+  const body = await req.json();
 
-export async function POST(req: NextRequest) {
-  try {
-    const { message, context } = await req.json();
+  const message = body.message;
+  const userData = body.userData || {}; // ✅ fallback
 
-    const prompt = `
-You are a mental health assistant AI.
+  const systemPrompt = `
+You are a mental health assistant.
 
-Patient Data:
-- Depression Score: ${context.score}/75
-- Severity: ${context.severity}
-- Memory Level: ${context.memoryLevel}
-- Mood Score: ${context.moodScore}/10
-- Energy: ${context.energy}/10
-- Stress: ${context.stress}/10
-- Mood: ${context.mood}
-- Financial Stress: ${context.financial}
-
-Instructions:
-- Be empathetic and supportive
-- Give practical suggestions
-- Do NOT diagnose
-- Keep responses concise
+User Data:
+- Score: ${userData.score ?? "unknown"}
+- Severity: ${userData.severity ?? "unknown"}
+- Sleep Avg: ${userData.sleepAvg ?? "unknown"}
+- Weight Trend: ${userData.weightTrend ?? "unknown"}
+- Mood: ${userData.mood ?? "unknown"}
 
 User Question:
 ${message}
+
+Give a helpful, supportive answer based on the data.
 `;
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+  try {
+    const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:3000", // optional but recommended
-        "X-Title": "Mental Health App",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini", // 🔥 fast + cheap + good
+        model: "openai/gpt-4o-mini",
         messages: [
           {
             role: "system",
-            content: "You are a helpful mental health assistant.",
+            content: systemPrompt,
           },
           {
             role: "user",
-            content: prompt,
+            content: message,
           },
         ],
       }),
     });
 
-    const data = await response.json();
-
-    const reply =
-      data.choices?.[0]?.message?.content ||
-      "Sorry, I couldn't generate a response.";
-
-    return NextResponse.json({ success: true, reply });
-
-  } catch (err) {
-    console.error("OPENROUTER ERROR:", err);
+    const data = await res.json();
 
     return NextResponse.json({
-      success: false,
-      reply: "AI is currently unavailable. Try again later.",
+      reply: data.choices?.[0]?.message?.content || "No response",
     });
+  } catch (err) {
+    console.error("AI ERROR:", err);
+    return NextResponse.json({ reply: "Error occurred" });
   }
 }
