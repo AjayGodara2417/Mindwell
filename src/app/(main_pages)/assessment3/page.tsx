@@ -28,22 +28,20 @@ function AssessmentThreeInner() {
 
   const stressLevels = ["Low", "Moderate", "High"];
 
-  const handleSubmit = async () => {
-    const email = localStorage.getItem("userEmail");
-
-    await fetch("/api/subjective-assessment", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        ...form,
-      }),
-    });
+  const handleSubmit = () => {
+    // ✅ validation
+    if (!form.mood || !form.financial) {
+      alert("Please select mood and financial stress");
+      return;
+    }
 
     router.push(
-      `/assessment4?score=${baseScore}&memoryLevel=${memoryLevel}&mood=${form.mood}&financial=${form.financial}`
+      `/assessment4?score=${baseScore}
+      &memoryLevel=${memoryLevel}
+      &mood=${encodeURIComponent(form.mood)}
+      &financial=${encodeURIComponent(form.financial)}
+      &illness=${encodeURIComponent(form.illness)}
+      &thoughts=${encodeURIComponent(form.thoughts)}`
     );
   };
 
@@ -65,8 +63,7 @@ function AssessmentThreeInner() {
             Any illness recently?
           </label>
           <textarea
-            className="w-full mt-2 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none"
-            placeholder="e.g. Fever, headache, fatigue..."
+            className="w-full mt-2 p-3 border border-slate-200 rounded-xl"
             value={form.illness}
             onChange={(e) =>
               setForm({ ...form, illness: e.target.value })
@@ -79,8 +76,7 @@ function AssessmentThreeInner() {
             What’s on your mind?
           </label>
           <textarea
-            className="w-full mt-2 p-3 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none"
-            placeholder="You can share anything..."
+            className="w-full mt-2 p-3 border border-slate-200 rounded-xl"
             value={form.thoughts}
             onChange={(e) =>
               setForm({ ...form, thoughts: e.target.value })
@@ -100,10 +96,10 @@ function AssessmentThreeInner() {
                 onClick={() =>
                   setForm({ ...form, financial: level })
                 }
-                className={`px-4 py-2 rounded-full text-sm border transition ${
+                className={`px-4 py-2 rounded-full border ${
                   form.financial === level
-                    ? "bg-teal-600 text-white border-teal-600"
-                    : "bg-white text-slate-600 border-slate-200"
+                    ? "bg-teal-600 text-white"
+                    : "bg-white"
                 }`}
               >
                 {level}
@@ -125,10 +121,10 @@ function AssessmentThreeInner() {
                 onClick={() =>
                   setForm({ ...form, mood: m.label })
                 }
-                className={`p-4 rounded-xl border text-center cursor-pointer transition ${
+                className={`p-4 rounded-xl border text-center cursor-pointer ${
                   form.mood === m.label
-                    ? "bg-teal-500 text-white border-teal-500"
-                    : "bg-white border-slate-200"
+                    ? "bg-teal-500 text-white"
+                    : "bg-white"
                 }`}
               >
                 <div className="text-2xl">{m.emoji}</div>
@@ -140,9 +136,9 @@ function AssessmentThreeInner() {
 
         <button
           onClick={handleSubmit}
-          className="w-full bg-teal-600 text-white py-3 rounded-xl font-medium hover:bg-teal-700 transition"
+          className="w-full bg-teal-600 text-white py-3 rounded-xl"
         >
-          Finish Assessment
+          Continue
         </button>
       </div>
     </div>

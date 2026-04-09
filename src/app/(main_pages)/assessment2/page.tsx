@@ -64,29 +64,10 @@ function SimonGameInner() {
   };
 
   useEffect(() => {
-    if (gameOver) {
-      const memoryScore = level * 5;
-      const email = localStorage.getItem("userEmail");
-
-      const saveMemoryScore = async () => {
-        await fetch("/api/memory-assessment", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            email,
-            level,
-            score: memoryScore,
-          }),
-        });
-
-        router.push(`/assessment3?score=${baseScore}&memoryLevel=${level}`);
-      };
-
-      setTimeout(saveMemoryScore, 1500);
-    }
-  }, [gameOver]);
+  if (gameOver) {
+    router.push(`/assessment3?score=${baseScore}&memoryLevel=${level}`);
+  }
+}, [gameOver]);
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 p-6">

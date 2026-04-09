@@ -37,13 +37,9 @@ export default function AssessmentPage() {
           0
         );
 
-        const email = localStorage.getItem("userEmail");
+        // const email = localStorage.getItem("userEmail");
 
-        await fetch("/api/assessment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, score: totalScore }),
-        });
+        router.push(`/assessment2?score=${totalScore}`);
 
         const today = new Date().toLocaleDateString("en-CA");
         localStorage.setItem("lastAssessmentDate", today);
