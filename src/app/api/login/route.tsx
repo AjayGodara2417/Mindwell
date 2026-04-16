@@ -8,17 +8,24 @@ const SECRET = process.env.JWT_SECRET as string;
 
 export async function POST(req: NextRequest) {
   try {
-    const body: LoginRequest = await req.json();
-    const { email, password } = body;
+    const body = await req.json();
+    const { email, password, role } = body;
 
-    // -------- Check Doctor --------
-    const [doctorRows]: any = await db.query(
-      "SELECT * FROM doctors WHERE email=?",
-      [email]
-    );
+    // ---------------- DOCTOR LOGIN ----------------
+    if (role === "doctor") {
+      const [rows]: any = await db.query(
+        "SELECT * FROM doctors WHERE email=?",
+        [email]
+      );
 
-    if (doctorRows.length > 0) {
-      const doctor = doctorRows[0];
+      if (rows.length === 0) {
+        return NextResponse.json(
+          { message: "Doctor not found" },
+          { status: 404 }
+        );
+      }
+
+      const doctor = rows[0];
 
       const valid = await bcrypt.compare(password, doctor.password);
 
@@ -39,24 +46,27 @@ export async function POST(req: NextRequest) {
         success: true,
         role: "doctor",
         token,
-
-        // doctor details
         name: doctor.full_name,
         email: doctor.email,
-
-        // IMPORTANT: send doctor_id
         doctor_id: doctor.doctor_id,
       });
     }
 
-    // -------- Check Patient --------
-    const [patientRows]: any = await db.query(
-      "SELECT * FROM patients WHERE email=?",
-      [email]
-    );
+    // ---------------- PATIENT LOGIN ----------------
+    if (role === "patient") {
+      const [rows]: any = await db.query(
+        "SELECT * FROM patients WHERE email=?",
+        [email]
+      );
 
-    if (patientRows.length > 0) {
-      const patient = patientRows[0];
+      if (rows.length === 0) {
+        return NextResponse.json(
+          { message: "Patient not found" },
+          { status: 404 }
+        );
+      }
+
+      const patient = rows[0];
 
       const valid = await bcrypt.compare(password, patient.password);
 
@@ -82,9 +92,10 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    // ---------------- INVALID ROLE ----------------
     return NextResponse.json(
-      { message: "User not found" },
-      { status: 404 }
+      { message: "Invalid role selected" },
+      { status: 400 }
     );
 
   } catch (error) {

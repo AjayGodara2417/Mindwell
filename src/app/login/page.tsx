@@ -12,38 +12,35 @@ export default function Login() {
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    const res = await fetch("/api/login", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role, email, password }), // ✅ ADD ROLE
+  });
 
-    const data = await res.json();
+  const data = await res.json();
 
-    if (!res.ok) {
-      alert(data.message);
-      return;
-    }
+  if (!res.ok) {
+    alert(data.message);
+    return;
+  }
 
-    localStorage.setItem("token", data.token);
-    localStorage.setItem("userEmail", data.email);
-    localStorage.setItem("userName", data.name);
-    localStorage.setItem("userRole", data.role);
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("userEmail", data.email);
+  localStorage.setItem("userName", data.name);
+  localStorage.setItem("userRole", data.role);
+
+  if (data.role === "doctor") {
     localStorage.setItem("doctorId", data.doctor_id);
-
-    if (data.role === "doctor") {
-      localStorage.setItem("doctorId", data.doctor_id);
-      localStorage.setItem("userName", data.name);
-      localStorage.setItem("userEmail", data.email);
-      router.push("/doctor-dashboard");
-    } else {
-      router.push("/dashboard");
-    }
-  };
+    router.push("/doctor-dashboard");
+  } else {
+    router.push("/dashboard");
+  }
+};
 
   return (
   <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
