@@ -1,6 +1,19 @@
 @import "tailwindcss";
 @import 'react-calendar/dist/Calendar.css';
 
-.btn {
+/* .btn {
   @apply px-6 py-3 rounded-xl bg-teal-600 text-white font-medium shadow-md hover:shadow-lg hover:scale-[1.02] transition-all;
+} */
+
+.btn {
+  @apply px-6 py-3 rounded-xl font-semibold text-white 
+  bg-gradient-to-r from-indigo-500 to-purple-600 
+  hover:scale-105 active:scale-95 
+  transition-all duration-200 shadow-lg;
+}
+
+/* global.css */
+.tile-glow {
+  box-shadow: inset 0 4px 8px rgba(0,0,0,0.3),
+              0 6px 15px rgba(0,0,0,0.2);
 }

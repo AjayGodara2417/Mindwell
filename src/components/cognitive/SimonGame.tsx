@@ -1,66 +1,98 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import TestLayout from "./TestLayout";
 import { TestProps } from "@/types/cognitive";
+import { motion } from "framer-motion";
 
-const colors = ["green", "red", "yellow", "blue"];
+const COLORS = ["green", "red", "yellow", "blue"] as const;
+type ColorIndex = 0 | 1 | 2 | 3;
+
+type Phase = "idle" | "playing" | "input" | "gameover";
 
 export default function SimonGame({ onComplete }: TestProps) {
-  const [sequence, setSequence] = useState<number[]>([]);
-  const [userInput, setUserInput] = useState<number[]>([]);
-  const [active, setActive] = useState<number | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [started, setStarted] = useState(false);
+  const [sequence, setSequence] = useState<ColorIndex[]>([]);
+  const [userInput, setUserInput] = useState<ColorIndex[]>([]);
+  const [active, setActive] = useState<ColorIndex | null>(null);
+  const [phase, setPhase] = useState<Phase>("idle");
   const [level, setLevel] = useState(1);
-  const [gameOver, setGameOver] = useState(false);
+
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const cancelledRef = useRef(false);
+
+  // 🧹 Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      cancelledRef.current = true;
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    };
+  }, []);
 
   // ▶️ Start Game
   const startGame = () => {
-    setStarted(true);
+    cancelledRef.current = false;
     setSequence([]);
     setUserInput([]);
     setLevel(1);
-    setGameOver(false);
+    setPhase("playing");
     nextRound([]);
   };
 
-  // 🔁 Next Round
-  const nextRound = (prev: number[]) => {
-    const next = [...prev, Math.floor(Math.random() * 4)];
+  // 🔁 Next Round (safe state)
+  const nextRound = (prev: ColorIndex[]) => {
+    const next: ColorIndex[] = [
+      ...prev,
+      Math.floor(Math.random() * 4) as ColorIndex,
+    ];
+
     setSequence(next);
     setUserInput([]);
     playSequence(next);
   };
 
-  // 🎬 Show sequence
-  const playSequence = async (seq: number[]) => {
-    setIsPlaying(true);
+  // 🎬 Play sequence safely
+  const playSequence = async (seq: ColorIndex[]) => {
+    setPhase("playing");
 
     for (let i = 0; i < seq.length; i++) {
+      if (cancelledRef.current) return;
+
       setActive(seq[i]);
-      await new Promise((r) => setTimeout(r, 500));
+      await delay(500);
+
       setActive(null);
-      await new Promise((r) => setTimeout(r, 250));
+      await delay(250);
     }
 
-    setIsPlaying(false);
+    if (!cancelledRef.current) {
+      setPhase("input");
+    }
   };
 
+  const delay = (ms: number) =>
+    new Promise((res) => {
+      timeoutRef.current = setTimeout(res, ms);
+    });
+
   // 👆 Handle click
-  const handleClick = (index: number) => {
-    if (isPlaying || gameOver) return;
+  const handleClick = (index: ColorIndex) => {
+    if (phase !== "input") return;
+
+    // Tap feedback
+    setActive(index);
+    setTimeout(() => setActive(null), 150);
 
     const newInput = [...userInput, index];
     setUserInput(newInput);
 
-    // ❌ Wrong input
+    // ❌ Wrong
     if (sequence[newInput.length - 1] !== index) {
-      setGameOver(true);
+      setPhase("gameover");
 
-      // send score after small delay (UX)
+      const finalScore = calculateScore(level);
+
       setTimeout(() => {
-        onComplete(level * 5);
+        onComplete(finalScore);
       }, 800);
 
       return;
@@ -68,55 +100,83 @@ export default function SimonGame({ onComplete }: TestProps) {
 
     // ✅ Round complete
     if (newInput.length === sequence.length) {
-      setLevel((l) => l + 1);
-      setTimeout(() => nextRound(sequence), 800);
+      const nextLevel = level + 1;
+      setLevel(nextLevel);
+
+      setTimeout(() => {
+        nextRound(sequence);
+      }, 800);
     }
   };
 
+  // 🧠 Better scoring model
+  const calculateScore = (lvl: number) => {
+    // nonlinear growth → better differentiation
+    return Math.floor(lvl * lvl * 2);
+  };
+
   return (
-    <TestLayout
-      title="Memory Test"
-      subtitle="Repeat the pattern"
-    >
-      {/* START BUTTON */}
-      {!started && (
-        <div className="text-center">
-          <button onClick={startGame} className="btn">
-            Start Game
-          </button>
+    <TestLayout title="Memory Test" subtitle="Repeat the pattern">
+      <div className="relative flex flex-col items-center">
+        {/* 🎮 BOARD */}
+        <div className="grid grid-cols-2 gap-3 p-4 bg-slate-900 rounded-3xl shadow-2xl">
+          {COLORS.map((c, i) => (
+            <motion.div
+              key={i}
+              onClick={() => handleClick(i as ColorIndex)}
+              whileTap={{ scale: 0.92 }}
+              animate={
+                active === i
+                  ? {
+                      scale: 1.08,
+                      opacity: 0.7,
+                      boxShadow: "0 0 25px rgba(255,255,255,0.6)",
+                    }
+                  : { scale: 1, opacity: 1 }
+              }
+              transition={{ duration: 0.2 }}
+              className={`w-24 h-24 sm:w-28 sm:h-28 rounded-2xl cursor-pointer
+                ${c === "green" && "bg-green-500"}
+                ${c === "red" && "bg-red-500"}
+                ${c === "yellow" && "bg-yellow-400"}
+                ${c === "blue" && "bg-blue-500"}
+              `}
+            />
+          ))}
         </div>
-      )}
 
-      {/* GAME GRID */}
-      {started && (
-        <>
-          <div className="grid grid-cols-2 gap-4 justify-center">
-            {colors.map((c, i) => (
-              <div
-                key={i}
-                onClick={() => handleClick(i)}
-                className={`w-28 h-28 rounded-2xl cursor-pointer shadow-md transition-all
-                  ${c === "green" && "bg-green-500"}
-                  ${c === "red" && "bg-red-500"}
-                  ${c === "yellow" && "bg-yellow-400"}
-                  ${c === "blue" && "bg-blue-500"}
-                  ${active === i && "opacity-60 scale-110"}
-                `}
-              />
-            ))}
+        {/* ▶️ START */}
+        {phase === "idle" && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-3xl">
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={startGame}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold shadow-xl"
+            >
+              Start Game
+            </motion.button>
           </div>
+        )}
 
-          <div className="text-center text-slate-600 mt-2">
-            Level: {level}
+        {/* 📊 LEVEL */}
+        {phase !== "idle" && (
+          <div className="mt-4 text-white bg-slate-800 px-4 py-1 rounded-full text-sm shadow">
+            Level {level}
           </div>
-        </>
-      )}
+        )}
 
-      {gameOver && (
-        <div className="text-center text-red-500 font-medium mt-4">
-          Game Over
-        </div>
-      )}
+        {/* ❌ GAME OVER */}
+        {phase === "gameover" && (
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="mt-4 text-red-500 font-semibold"
+          >
+            Game Over
+          </motion.div>
+        )}
+      </div>
     </TestLayout>
   );
 }

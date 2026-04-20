@@ -8,6 +8,8 @@ import DigitSpanTest from "@/components/cognitive/DigitSpan";
 import StroopTest from "@/components/cognitive/StroopTest";
 import CognitiveSummary from "@/components/cognitive/CognitiveSummary";
 
+import { AnimatePresence, motion } from "framer-motion";
+
 export default function CognitivePage() {
   const [step, setStep] = useState(0);
 
@@ -42,6 +44,7 @@ export default function CognitivePage() {
     alert("Cognitive Test Completed!");
   };
 
+  
   switch (step) {
     case 0:
       return (
