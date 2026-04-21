@@ -12,8 +12,10 @@ import {
   LogOut,
   BarChart3,
   Menu,
+  ActivityIcon,
   X,
   Stethoscope,
+  Activity,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,6 +31,7 @@ export default function DashboardLayout({
   const navItems = [
     { href: "/dashboard", icon: Home, label: "Dashboard" },
     { href: "/assessment", icon: BarChart3, label: "Assessment" },
+    { href: "/activites", icon: Activity, label: "Activities" },
     { href: "/planner", icon: Calendar, label: "Schedule" },
     { href: "/face-diary", icon: Video, label: "Journal" },
     { href: "/resources", icon: BookOpen, label: "Resources" },
