@@ -12,6 +12,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   CartesianGrid,
+  Bar,
+  BarChart,
 } from "recharts";
 import { Bell, Activity, Moon, FileText, Send, CheckCircle2 } from "lucide-react";
 
@@ -57,6 +59,14 @@ type Rating = {
   index?: number;
 };
 
+type Cognitive = {
+  test_type: string;
+  score: number;
+  accuracy: number;
+  created_at: string;
+  date?: string;
+};
+
 export default function PatientDetails() {
   const { email } = useParams();
   const [assessments, setAssessments] = useState<Assessment[]>([]);
@@ -65,6 +75,12 @@ export default function PatientDetails() {
   const [memoryData, setMemoryData] = useState<Memory[]>([]);
   const [subjectiveData, setSubjectiveData] = useState<Subjective[]>([]);
   const [ratingData, setRatingData] = useState<Rating[]>([]);
+
+
+  const [cognitiveData, setCognitiveData] = useState<Cognitive[]>([]);
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const [domain, setDomain] = useState("all");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +99,17 @@ export default function PatientDetails() {
 
         const res5 = await fetch(`/api/rating-assessment?email=${email}`);
         const data5 = await res5.json();
+
+        const res6 = await fetch(`/api/get-cognitive-data?email=${email}`);
+        const data6 = await res6.json();
+
+        if (data6.tests) {
+          const formatted = data6.tests.map((t: Cognitive) => ({
+            ...t,
+            date: new Date(t.created_at).toLocaleDateString(),
+          }));
+          setCognitiveData(formatted);
+        }
 
         if (data1.success) {
           const formatted = data1.history
@@ -166,6 +193,36 @@ export default function PatientDetails() {
 
     fetchData();
   }, [email]);
+
+  const domainMap: any = {
+    memory: ["digit_span", "word_recall", "visual_memory", "negative_bias_recall"],
+    attention: ["stroop", "emotional_stroop", "cpt"],
+    speed: ["reaction_time", "symbol_digit"],
+    executive: ["n_back", "trail_making"],
+  };
+
+  const filteredCognitive = cognitiveData.filter((t) => {
+    const time = new Date(t.created_at).getTime();
+
+    const inDate =
+      (!from || time >= new Date(from).getTime()) &&
+      (!to || time <= new Date(to).getTime());
+
+    const inDomain =
+      domain === "all" || domainMap[domain]?.includes(t.test_type);
+
+    return inDate && inDomain;
+  });
+
+  const getAvg = (arr: number[]) =>
+    arr.length ? Math.round(arr.reduce((a, b) => a + b, 0) / arr.length) : 0;
+
+  const domainScores = {
+    memory: getAvg(filteredCognitive.filter(t => domainMap.memory.includes(t.test_type)).map(t => t.score)),
+    attention: getAvg(filteredCognitive.filter(t => domainMap.attention.includes(t.test_type)).map(t => t.score)),
+    speed: getAvg(filteredCognitive.filter(t => domainMap.speed.includes(t.test_type)).map(t => t.score)),
+    executive: getAvg(filteredCognitive.filter(t => domainMap.executive.includes(t.test_type)).map(t => t.score)),
+  };
 
   const latest = assessments[assessments.length - 1];
   const latestMemory = memoryData[memoryData.length - 1];
@@ -533,6 +590,72 @@ export default function PatientDetails() {
           </ResponsiveContainer>
         </div>
       </div>
+
+      <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm grid md:grid-cols-4 gap-4">
+        <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border p-2 rounded" />
+        <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border p-2 rounded" />
+
+        <select value={domain} onChange={(e) => setDomain(e.target.value)} className="border p-2 rounded">
+          <option value="all">All Domains</option>
+          <option value="memory">Memory</option>
+          <option value="attention">Attention</option>
+          <option value="speed">Speed</option>
+          <option value="executive">Executive</option>
+        </select>
+      </div>
+
+      <div className="grid md:grid-cols-4 gap-4">
+        {Object.entries(domainScores).map(([k, v]) => (
+          <div key={k} className="bg-white p-4 rounded-xl shadow-sm">
+            <p className="text-xs text-slate-400 uppercase">{k}</p>
+            <p className="text-xl font-bold text-[#2f5d50]">{v}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h3 className="font-bold mb-4">Cognitive Trend</h3>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <LineChart data={filteredCognitive}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="date" />
+            <YAxis />
+            <Tooltip />
+            <Line type="monotone" dataKey="score" stroke="#2f5d50" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+        <h3 className="font-bold mb-4">Cognitive Domain Breakdown</h3>
+
+        <ResponsiveContainer width="100%" height={250}>
+          <BarChart
+            data={[
+              { name: "Memory", value: domainScores.memory },
+              { name: "Attention", value: domainScores.attention },
+              { name: "Speed", value: domainScores.speed },
+              { name: "Executive", value: domainScores.executive },
+            ]}
+          >
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Bar dataKey="value" fill="#2f5d50" />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <p className="text-blue-900/80 text-sm">
+        Patient shows <b>cognitive performance variation</b>.
+        Memory: <b>{domainScores.memory}</b>, Attention: <b>{domainScores.attention}</b>,
+        Speed: <b>{domainScores.speed}</b>, Executive: <b>{domainScores.executive}</b>.
+
+        {domainScores.attention < 50 && " Attention deficit indicators detected."}
+        {domainScores.memory < 50 && " Memory performance below optimal."}
+      </p>
 
     </div>
   );
