@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Brain, Zap, Timer, Layers } from "lucide-react";
+import { Brain, Zap, Timer, Layers, Icon } from "lucide-react";
 
 const tests = [
   {
@@ -48,23 +48,23 @@ const tests = [
     path: "/activites/executive/trail-making",
   },
   {
-  title: "Symbol-Digit Matching",
-  description: "Measure processing speed and symbol recognition.",
-  icon: Timer,
-  path: "/activites/speed/symbol-digit",
-},
-{
-  title: "Emotional Stroop",
-  description: "Assess emotional processing and cognitive bias.",
-  icon: Brain,
-  path: "/activites/attention/emotional-stroop",
-},
-{
-  title: "Memory Bias Test",
-  description: "Detect emotional bias in memory recall.",
-  icon: Brain,
-  path: "/activites/memory/negative-bias",
-},
+    title: "Symbol-Digit Matching",
+    description: "Measure processing speed and symbol recognition.",
+    icon: Timer,
+    path: "/activites/speed/symbol-digit",
+  },
+  {
+    title: "Emotional Stroop",
+    description: "Assess emotional processing and cognitive bias.",
+    icon: Brain,
+    path: "/activites/attention/emotional-stroop",
+  },
+  {
+    title: "Memory Bias Test",
+    description: "Detect emotional bias in memory recall.",
+    icon: Brain,
+    path: "/activites/memory/negative-bias",
+  },
 ];
 
 export default function CognitiveAssessmentPage() {
@@ -74,9 +74,17 @@ export default function CognitiveAssessmentPage() {
     <div className="min-h-screen bg-[#f6f9f8]">
       {/* Header */}
       <div className="max-w-6xl mx-auto mb-10">
-        <h1 className="text-3xl md:text-4xl font-bold text-[#2f5d50]">
-          Cognitive Assessment
-        </h1>
+        <div className="flex justify-between">
+          <h1 className="text-3xl md:text-4xl font-bold text-[#2f5d50]">
+            Cognitive Assessment
+          </h1>
+          <button
+            onClick={() => router.push("/activites/cognitivedashboard")}
+            className="mt-6 w-fit p-8 bg-[#2f5d50] text-white py-2.5 rounded-xl text-sm font-medium hover:bg-[#274f45] transition"
+          >
+            Activities Result
+          </button>
+        </div>
         <p className="text-gray-500 mt-2 max-w-2xl">
           Evaluate key cognitive domains including memory, attention,
           processing speed, and executive function through structured
