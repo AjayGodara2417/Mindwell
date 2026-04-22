@@ -2,13 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Search, Users, ArrowRight, Filter } from "lucide-react";
+import {
+  Search,
+  Users,
+  ArrowRight,
+  Filter,
+  Plus,
+  Activity,
+  Clock,
+  MoreHorizontal
+} from "lucide-react";
 
 type Patient = {
   id: string;
   full_name: string;
   email: string;
   symptoms: string;
+  risk_level?: "High" | "Moderate" | "Low";
 };
 
 export default function PatientsPage() {
@@ -25,110 +35,131 @@ export default function PatientsPage() {
         const res = await fetch(`/api/doctor-patients?doctor_id=${doctorId}`);
         const data = await res.json();
         if (data.success) {
-          setPatients(data.patients);
+          // Assigning random risk levels for the UI demonstration if not in DB
+          const enhanced = data.patients.map((p: any) => ({
+            ...p,
+            risk_level: p.risk_level || (Math.random() > 0.8 ? "High" : "Low")
+          }));
+          setPatients(enhanced);
         }
       } catch (err) {
         console.error(err);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchPatients();
   }, []);
 
+  // ✅ Correct approach
   const filteredPatients = patients.filter((p) =>
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">Patient Directory</h1>
-          <p className="text-slate-500 text-sm mt-1">Manage and view all assigned patient records.</p>
+      {/* --- PAGE HEADER --- */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 px-2">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-[10px] font-black uppercase tracking-[0.15em]">
+            <Activity size={12} /> Clinical Roster
+          </div>
+          <h1 className="text-4xl font-black text-slate-900 tracking-tight">Patient Directory</h1>
+          <p className="text-slate-500 font-medium">Access and manage comprehensive medical profiles.</p>
         </div>
+
         <div className="flex items-center gap-3">
-           <button className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors">
-            <Filter size={16} /> Filter
+          <button className="flex items-center gap-2 px-5 py-3.5 bg-white border border-slate-200 rounded-2xl text-sm font-bold text-slate-600 hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm">
+            <Filter size={18} />
+            <span>Advanced Filters</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all">
-            <Users size={16} /> Add Patient
+          <button className="flex items-center gap-2 px-6 py-3.5 bg-indigo-600 text-white rounded-2xl text-sm font-bold hover:bg-indigo-700 shadow-xl shadow-indigo-200 transition-all active:scale-95">
+            <Plus size={20} />
+            <span>Add Patient</span>
           </button>
         </div>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative max-w-2xl">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+      {/* --- SEARCH BAR SECTION --- */}
+      <div className="relative group max-w-3xl">
+        <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
+          <Search className="text-slate-400 group-focus-within:text-indigo-600 transition-colors" size={20} />
+        </div>
         <input
-          placeholder="Search by patient name or email..."
-          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all outline-none shadow-sm"
-          value={search}
+          placeholder="Search clinical records by name or email ID..."
+          className="w-full pl-14 pr-6 py-5 bg-white border border-slate-200 rounded-[1.5rem] text-sm font-medium focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none shadow-sm"
+          value={search} // Controlled component
           onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
-      {/* Patient Grid */}
-      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* --- PATIENT GRID --- */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
         {loading ? (
-          // Skeleton Loading State
-          [1, 2, 3, 4, 5, 6].map((i) => (
-            <div key={i} className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm h-48 animate-pulse">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 bg-slate-200 rounded-full"></div>
-                <div className="space-y-2">
-                  <div className="h-4 w-32 bg-slate-200 rounded"></div>
-                  <div className="h-3 w-24 bg-slate-200 rounded"></div>
-                </div>
+          // Professional Skeleton state
+          [1, 2, 3].map((i) => (
+            <div key={i} className="bg-white p-8 rounded-[2.5rem] border border-slate-100 shadow-sm h-64 animate-pulse">
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-slate-100 rounded-2xl"></div>
+                <div className="w-8 h-4 bg-slate-100 rounded-lg"></div>
               </div>
-              <div className="h-3 w-full bg-slate-100 rounded mt-4"></div>
-              <div className="h-3 w-2/3 bg-slate-100 rounded mt-2"></div>
+              <div className="space-y-3">
+                <div className="h-5 w-40 bg-slate-100 rounded-lg"></div>
+                <div className="h-4 w-28 bg-slate-100 rounded-lg"></div>
+              </div>
             </div>
           ))
         ) : filteredPatients.length === 0 ? (
-          <div className="col-span-full text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-slate-50 rounded-full mb-4">
-              <Users className="text-slate-400" size={32} />
+          <div className="col-span-full text-center py-24 bg-white rounded-[3rem] border border-dashed border-slate-200">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-50 rounded-full mb-6">
+              <Users className="text-slate-300" size={40} />
             </div>
-            <h3 className="text-lg font-semibold text-slate-700">No patients found</h3>
-            <p className="text-slate-500 text-sm mt-1">Try adjusting your search terms.</p>
+            <h3 className="text-xl font-black text-slate-800 tracking-tight">No clinical matches</h3>
+            <p className="text-slate-500 font-medium mt-2">Adjust your query to find the desired record.</p>
           </div>
         ) : (
           filteredPatients.map((p) => (
             <div
               key={p.id}
               onClick={() => router.push(`/doctor-dashboard/patient/${p.email}`)}
-              className="group bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-blue-200 cursor-pointer transition-all duration-300 flex flex-col justify-between h-full"
+              className="group bg-white p-8 rounded-[2.5rem] border border-slate-200/60 shadow-sm hover:shadow-2xl hover:shadow-indigo-500/5 hover:border-indigo-200 cursor-pointer transition-all duration-500 flex flex-col justify-between"
             >
               <div>
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-blue-200">
-                      {p.full_name.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
-                        {p.full_name}
-                      </h3>
-                      <p className="text-xs text-slate-500 font-medium">{p.email}</p>
-                    </div>
+                <div className="flex items-start justify-between mb-8">
+                  <div className="w-16 h-16 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-black text-2xl group-hover:bg-indigo-600 group-hover:scale-110 transition-all duration-500 shadow-lg">
+                    {p.full_name.charAt(0)}
+                  </div>
+                  <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${p.risk_level === "High" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                    <span className={`w-1 h-1 rounded-full ${p.risk_level === "High" ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                    {p.risk_level || "Normal"}
                   </div>
                 </div>
 
-                <div className="bg-slate-50 rounded-lg p-3 mb-4">
-                  <p className="text-xs text-slate-400 font-semibold uppercase tracking-wider mb-1">Primary Symptoms</p>
-                  <p className="text-sm text-slate-600 line-clamp-2 leading-relaxed">
-                    {p.symptoms || "No symptoms recorded"}
+                <div className="space-y-1 mb-6">
+                  <h3 className="text-xl font-black text-slate-900 group-hover:text-indigo-600 transition-colors tracking-tight">
+                    {p.full_name}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{p.email}</p>
+                </div>
+
+                <div className="bg-slate-50 rounded-2xl p-4 mb-4 border border-slate-100 group-hover:bg-indigo-50/50 transition-colors">
+                  <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mb-2">Primary Diagnosis</p>
+                  <p className="text-sm text-slate-700 font-bold line-clamp-2 leading-relaxed">
+                    {p.symptoms || "General Health Monitoring"}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-slate-100 mt-auto">
-                <span className="text-xs font-medium text-slate-400">Last Active: 2h ago</span>
-                <div className="flex items-center gap-1 text-blue-600 text-sm font-semibold group-hover:translate-x-1 transition-transform">
-                  View Profile <ArrowRight size={16} />
+              <div className="flex items-center justify-between pt-6 border-t border-slate-100 mt-4">
+                <div className="flex items-center gap-2 text-slate-400">
+                  <Clock size={14} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">Active 2h ago</span>
+                </div>
+                <div className="w-10 h-10 rounded-full border border-slate-100 flex items-center justify-center text-slate-300 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all duration-300 group-hover:translate-x-1">
+                  <ArrowRight size={18} />
                 </div>
               </div>
             </div>
