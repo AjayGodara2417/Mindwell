@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { 
   Activity, ShieldCheck, Users, BrainCircuit, ArrowRight, 
   BarChart3, HeartPulse, ClipboardCheck, Lock, 
-  Smartphone, Bell, Database, HardDrive, HelpCircle, Menu, X 
+  Smartphone, Bell, Database, HardDrive, HelpCircle, Menu, X, 
+  Stethoscope
 } from 'lucide-react';
 
 export default function LandingPage() {
@@ -16,9 +17,9 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans overflow-x-hidden">
       {/* --- NAVIGATION --- */}
-      <nav className="flex items-center justify-between px-6 md:px-12 py-5 bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-[100]">
+      <nav className="flex items-center justify-between px-6 md:px-12 py-5 bg-white/90 backdrop-blur-md border-b border-slate-200 sticky top-0 z-100">
         <div className="flex items-center gap-2 shrink-0">
-          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold">M</div>
+          <div className="w-9 h-9 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold"><Stethoscope size={18} /></div>
           <span className="text-xl font-bold tracking-tight text-indigo-900 uppercase">MindWell</span>
         </div>
 
@@ -31,8 +32,8 @@ export default function LandingPage() {
 
         {/* Desktop Auth */}
         <div className="hidden lg:flex items-center gap-4">
-          <Link href="/login" className="px-6 py-2.5 font-semibold text-slate-700 hover:text-indigo-600 transition">Log in</Link>
-          <Link href="/signup" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100">
+          <Link href="/login" className="px-6 py-2.5 font-semibold text-slate-700  hover:bg-slate-200 rounded-xl transition hover:-translate-y-0.5">Log in</Link>
+          <Link href="/signup" className="px-6 py-2.5 bg-indigo-600 text-white rounded-xl font-semibold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 hover:-translate-y-0.5">
             Get Started
           </Link>
         </div>
@@ -221,9 +222,14 @@ export default function LandingPage() {
             <h2 className="text-4xl font-black text-slate-900 text-center md:text-left leading-tight">
               Built for Practitioners, <br />Designed for Patients.
             </h2>
-            <Link href="/doctors" className="px-8 py-4 border-2 border-slate-900 rounded-2xl font-bold hover:bg-slate-900 hover:text-white transition-all shadow-lg shadow-slate-100">
+            <div className='flex gap-3'>
+              <Link href="/doctor-dashboard" className="px-8 py-4 border-2 border-slate-900 rounded-2xl font-bold hover:bg-slate-900 hover:text-white transition-all shadow-lg shadow-slate-100 hover:-translate-y-1">
               View Doctor Portal
             </Link>
+            <Link href="/dashboard" className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-slate-900 hover:text-white transition-all shadow-lg shadow-slate-100 hover:-translate-y-1">
+              View Patient Portal
+            </Link>
+            </div>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8">
@@ -265,18 +271,18 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-20 items-center">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 order-2 lg:order-1">
             <div className="space-y-6 mt-8">
-              <div className="bg-white/10 p-8 rounded-[2rem] backdrop-blur-xl border border-white/20">
+              <div className="bg-white/10 p-8 rounded-4xl backdrop-blur-xl border border-white/20">
                 <Smartphone className="mb-6 text-indigo-200" />
                 <h4 className="font-bold text-xl mb-2">Daily Check-ins</h4>
                 <p className="text-indigo-100 leading-relaxed">Simple, empathetic mood tracking for patients.</p>
               </div>
-              <div className="bg-white/10 p-8 rounded-[2rem] backdrop-blur-xl border border-white/20">
+              <div className="bg-white/10 p-8 rounded-4xl backdrop-blur-xl border border-white/20">
                 <Bell className="mb-6 text-indigo-200" />
                 <h4 className="font-bold text-xl mb-2">Smart Alerts</h4>
                 <p className="text-indigo-100 leading-relaxed">Nudges for medication and therapy sessions.</p>
               </div>
             </div>
-            <div className="bg-white/10 p-8 rounded-[2rem] backdrop-blur-xl border border-white/20 h-fit self-center">
+            <div className="bg-white/10 p-8 rounded-4xl backdrop-blur-xl border border-white/20 h-fit self-center">
               <HeartPulse className="mb-6 text-indigo-200" />
               <h4 className="font-bold text-xl mb-2">Wellness Log</h4>
               <p className="text-indigo-100 leading-relaxed">Visualizing long-term recovery patterns.</p>
@@ -331,7 +337,8 @@ export default function LandingPage() {
             {[
               { q: "How accurate is the depression analysis?", a: "Our models combine PHQ-9 benchmarks with behavioral data trends for clinical precision." },
               { q: "Is my data shared with third parties?", a: "Never. Your data belongs to you and your authorized healthcare provider." },
-              { q: "How do I invite my doctor?", a: "Generate a secure invite link from your dashboard to connect with your care provider." }
+              { q: "How do I start?", a: "Sign up for free and go to assessment tab to start giving assessment." },
+              { q: "What is activity section?", a: "Keep improving your health if your depression level in low by fun activities." }
             ].map((faq, i) => (
               <details key={i} className="group bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-all duration-300">
                 <summary className="p-6 font-bold text-slate-900 cursor-pointer list-none flex justify-between items-center group-open:bg-indigo-50 group-open:text-indigo-600">
@@ -364,7 +371,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
           <div className="flex flex-col items-center md:items-start gap-4 text-center md:text-left">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs">M</div>
+              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xs"><Stethoscope size={18} /></div>
               <span className="text-sm font-bold text-slate-900 uppercase tracking-widest">MindWell</span>
             </div>
             <p className="text-slate-400 text-xs">© 2026 STRESS Platform. Clinical Depression Analysis Engine.</p>
