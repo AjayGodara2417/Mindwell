@@ -100,7 +100,7 @@ export default function Login() {
         </div>
 
         {/* Doctor ID */}
-        <div>
+        {/* <div>
           <label className="text-sm text-gray-600">Doctor ID</label>
           <input
             type="text"
@@ -109,7 +109,7 @@ export default function Login() {
             onChange={(e) => setDoctor_id(e.target.value)}
             className="w-full mt-1 bg-gray-100 px-4 py-2 rounded-xl outline-none focus:ring-2 focus:ring-[#2f5d50]"
           />
-        </div>
+        </div> */}
 
         {/* Password */}
         <div>
