@@ -2,14 +2,17 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   ArrowRight,
   Users,
   Activity,
-  DollarSign,
-  FileCheck,
   Plus,
+  AlertCircle,
+  BrainCircuit,
+  Filter,
+  MoreVertical,
 } from "lucide-react";
 
 type Patient = {
@@ -17,6 +20,8 @@ type Patient = {
   full_name: string;
   email: string;
   symptoms: string;
+  risk_level: "High" | "Moderate" | "Low";
+  last_checkin: string;
 };
 
 export default function DoctorDashboard() {
@@ -26,25 +31,23 @@ export default function DoctorDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulating auth check - in real app use NextAuth or similar
-    const token = localStorage.getItem("token");
-    const doctorId = localStorage.getItem("doctorId");
-
-    // Mocking data if no token for demonstration purposes if you are testing locally without backend
-    // Remove this block in production
-    if (!token) {
-       // router.push("/login"); 
-       // return;
-    }
+    const doctorId = typeof window !== 'undefined' ? localStorage.getItem("doctorId") : null;
 
     const fetchPatients = async () => {
       try {
-        // Replace with your actual API endpoint
+        // Simulating a clinical API fetch with risk-level mapping
         const res = await fetch(`/api/doctor-patients?doctor_id=${doctorId}`);
         const data = await res.json();
+        
+        // Mocking additional clinical data if not present in API
+        const enhancedData = data.patients.map((p: any) => ({
+          ...p,
+          risk_level: p.risk_level || (Math.random() > 0.7 ? "High" : "Low"),
+          last_checkin: "2 hours ago"
+        }));
 
         if (data.success) {
-          setPatients(data.patients);
+          setPatients(enhancedData);
         }
       } catch (error) {
         console.error("Failed to fetch patients", error);
@@ -54,205 +57,209 @@ export default function DoctorDashboard() {
     };
 
     fetchPatients();
-  }, [router]);
+  }, []);
 
   const filteredPatients = patients.filter((p) =>
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const containerVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.5, staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, x: -10 },
+    visible: { opacity: 1, x: 0 }
+  };
+
   return (
-    <div className="max-w-7xl mx-auto space-y-8">
+    <motion.div 
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+      className="min-h-screen bg-slate-50 flex flex-col"
+    >
+      <main className="flex-1 p-4 md:p-10 lg:p-12 overflow-y-auto">
+        <div className="max-w-7xl mx-auto space-y-10">
+          
+          {/* HEADER AREA */}
+          <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Live</span>
+              </div>
+              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Clinical Insights</h1>
+              <p className="text-slate-500 font-medium">Analyzing behavioral patterns for {patients.length} patients.</p>
+            </div>
+            
+            <motion.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold transition-all flex items-center gap-3 shadow-xl shadow-indigo-200 group"
+            >
+              <div className="bg-white/20 p-1 rounded-lg">
+                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
+              </div>
+              Onboard New Patient
+            </motion.button>
+          </header>
 
-      {/* PAGE HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800">
-            Dashboard Overview
-          </h1>
-          <p className="text-slate-500 text-sm mt-1">
-            Welcome back, heres whats happening today.
-          </p>
-        </div>
-        <button className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-full text-sm font-medium shadow-lg shadow-blue-500/30 transition-all flex items-center gap-2">
-          <Plus size={18} />
-          New Patient
-        </button>
-      </div>
+          {/* STATS GRID */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <StatCard 
+              title="Active Roster" 
+              value={patients.length.toString()} 
+              icon={<Users className="text-indigo-600" />} 
+              bg="bg-indigo-50"
+              trend="+2 this week"
+            />
+            <StatCard 
+              title="Critical Priority" 
+              value={patients.filter(p => p.risk_level === "High").length.toString()} 
+              icon={<AlertCircle className="text-rose-600" />} 
+              bg="bg-rose-50"
+              trend="Requires Review"
+            />
+            <StatCard 
+              title="Avg. Wellness Score" 
+              value="72%" 
+              icon={<BrainCircuit className="text-emerald-600" />} 
+              bg="bg-emerald-50"
+              trend="System Average"
+            />
+          </div>
 
-      {/* STATS GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard 
-          title="Total Patients" 
-          value={patients.length.toString()} 
-          trend="+12%" 
-          icon={<Users className="text-blue-600" />} 
-          bg="bg-blue-50"
-        />
-        <StatCard 
-          title="Appointments" 
-          value="24" 
-          trend="Today"
-          icon={<Activity className="text-purple-600" />} 
-          bg="bg-purple-50"
-        />
-        <StatCard 
-          title="Pending Reports" 
-          value="8" 
-          trend="Action Needed" 
-          icon={<FileCheck className="text-orange-600" />} 
-          bg="bg-orange-50"
-        />
-        <StatCard 
-          title="Revenue" 
-          value="$12.4k" 
-          trend="+4.5%" 
-          icon={<DollarSign className="text-green-600" />} 
-          bg="bg-green-50"
-        />
-      </div>
-
-      {/* MAIN CONTENT GRID */}
-      <div className="grid lg:grid-cols-3 gap-8">
-
-        {/* LEFT COLUMN (Patient List) */}
-        <div className="lg:col-span-2 space-y-6">
-
-          {/* Patient Roster Card */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <h3 className="font-bold text-slate-800 text-lg">Recent Patients</h3>
-              <button className="text-blue-600 text-sm font-medium hover:underline">View All</button>
+          {/* PATIENT DIRECTORY */}
+          <section className="space-y-6">
+            <div className="flex items-center justify-between px-2">
+              <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                Patient Directory
+                <span className="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full uppercase">Live</span>
+              </h2>
+              <button className="text-slate-400 hover:text-indigo-600 flex items-center gap-2 text-sm font-bold transition-colors">
+                <Filter size={16} /> Filter
+              </button>
             </div>
 
-            <div className="p-6">
-              {/* Search Input */}
-              <div className="relative mb-6">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                <input
-                  placeholder="Search by name..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all outline-none"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
+            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden backdrop-blur-sm">
+              {/* Toolbar */}
+              <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between">
+                <div className="relative w-full md:w-96">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                  <input
+                    placeholder="Search by name, ID or status..."
+                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  {["All", "High Risk", "Recently Added"].map((tab) => (
+                    <button key={tab} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors">
+                      {tab}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* List */}
-              <div className="space-y-3">
-                {loading ? (
-                  <div className="text-center py-8 text-slate-400 text-sm">Loading records...</div>
-                ) : filteredPatients.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-sm">No patients found.</div>
-                ) : (
-                  filteredPatients.map((p) => (
-                    <div
-                      key={p.id}
-                      onClick={() => router.push(`/doctor-dashboard/patient/${p.email}`)}
-                      className="group flex items-center justify-between p-4 rounded-xl border border-slate-100 hover:border-blue-200 hover:bg-blue-50/50 cursor-pointer transition-all duration-200"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-sm group-hover:bg-white group-hover:text-blue-600 transition-colors">
-                          {p.full_name.charAt(0)}
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-slate-800 group-hover:text-blue-700 transition-colors">
-                            {p.full_name}
-                          </h4>
-                          <p className="text-xs text-slate-500">{p.email}</p>
-                        </div>
-                      </div>
+              {/* Patient List */}
+              <div className="p-2 md:p-4">
+                <AnimatePresence mode="popLayout">
+                  {loading ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center space-y-4">
+                      <Activity className="mx-auto w-8 h-8 text-indigo-500 animate-spin" />
+                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Decrypting Clinical Records</p>
+                    </motion.div>
+                  ) : filteredPatients.length === 0 ? (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center text-slate-400 font-bold italic">
+                      No clinical matches found in current view.
+                    </motion.div>
+                  ) : (
+                    <div className="grid gap-2">
+                      {filteredPatients.map((p) => (
+                        <motion.div
+                          layout
+                          key={p.id}
+                          variants={itemVariants}
+                          onClick={() => router.push(`/doctor-dashboard/patient/${p.email}`)}
+                          className="group grid grid-cols-1 md:grid-cols-4 items-center p-4 rounded-2xl hover:bg-indigo-50/40 transition-all duration-300 cursor-pointer border border-transparent hover:border-indigo-100"
+                        >
+                          {/* Profile Column */}
+                          <div className="flex items-center gap-4 col-span-1">
+                            <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black group-hover:scale-110 transition-transform">
+                              {p.full_name.charAt(0)}
+                            </div>
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
+                                {p.full_name}
+                              </h4>
+                              <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-tighter">{p.email}</p>
+                            </div>
+                          </div>
 
-                      <div className="flex items-center gap-4">
-                        <span className="hidden sm:inline-block text-xs text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                          {p.symptoms || "General Checkup"}
-                        </span>
-                        <ArrowRight size={16} className="text-slate-300 group-hover:text-blue-600 transition-colors" />
-                      </div>
+                          {/* Symptoms Column */}
+                          <div className="hidden md:flex flex-col col-span-1">
+                            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest mb-1">Primary Condition</span>
+                            <span className="text-xs font-bold text-slate-600 truncate">{p.symptoms || "Routine Monitoring"}</span>
+                          </div>
+
+                          {/* Priority/Status Column */}
+                          <div className="hidden md:flex flex-col col-span-1 items-center">
+                            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest mb-1">Risk Status</span>
+                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+                              p.risk_level === "High" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"
+                            }`}>
+                              <span className={`w-1 h-1 rounded-full ${p.risk_level === "High" ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
+                              {p.risk_level}
+                            </div>
+                          </div>
+
+                          {/* Action Column */}
+                          <div className="flex items-center justify-end gap-4 col-span-1">
+                            <div className="text-right hidden lg:block">
+                              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Last Entry</p>
+                              <p className="text-xs font-bold text-slate-500">{p.last_checkin}</p>
+                            </div>
+                            <div className="p-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300">
+                              <ArrowRight size={18} />
+                            </div>
+                          </div>
+                        </motion.div>
+                      ))}
                     </div>
-                  ))
-                )}
+                  )}
+                </AnimatePresence>
               </div>
             </div>
-          </div>
+          </section>
         </div>
-
-        {/* RIGHT COLUMN (Schedule & Insights) */}
-        <div className="space-y-6">
-
-          {/* Today's Schedule */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
-            <h3 className="font-bold text-slate-800 mb-4">Today Schedule</h3>
-            <div className="space-y-4">
-              <ScheduleItem time="09:00 AM" title="Emily Johnson" type="Consultation" status="Confirmed" />
-              <ScheduleItem time="10:30 AM" title="Michael Chen" type="Follow-up" status="Pending" />
-              <ScheduleItem time="11:15 AM" title="Sarah Connor" type="Surgery Prep" status="In Progress" />
-            </div>
-            <button className="w-full mt-6 py-2 text-sm text-slate-500 hover:text-blue-600 font-medium border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-              View Full Calendar
-            </button>
-          </div>
-
-          {/* Performance Card */}
-          <div className="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl shadow-lg p-6 text-white">
-            <div className="flex justify-between items-start mb-4">
-              <div>
-                <p className="text-blue-100 text-sm font-medium">Performance Score</p>
-                <h3 className="text-3xl font-bold mt-1">98%</h3>
-              </div>
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Activity size={20} className="text-white" />
-              </div>
-            </div>
-            <div className="w-full bg-blue-900/30 rounded-full h-2 mb-2">
-              <div className="bg-white h-2 rounded-full" style={{ width: '98%' }}></div>
-            </div>
-            <p className="text-xs text-blue-200">Excellent patient satisfaction this week.</p>
-          </div>
-
-        </div>
-      </div>
-    </div>
+      </main>
+    </motion.div>
   );
 }
 
-// Sub-components for cleaner code
-function StatCard({ title, value, trend, icon, bg }: any) {
+function StatCard({ title, value, icon, bg, trend }: any) {
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex items-start justify-between hover:shadow-md transition-shadow">
-      <div>
-        <p className="text-slate-500 text-sm font-medium">{title}</p>
-        <h3 className="text-2xl font-bold text-slate-800 mt-2">{value}</h3>
-        <p className="text-xs font-medium text-green-600 mt-2 bg-green-50 inline-block px-2 py-0.5 rounded-full">
-          {trend}
-        </p>
+    <motion.div 
+      whileHover={{ y: -5 }}
+      className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between group shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all"
+    >
+      <div className="space-y-1">
+        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
+        <div className="flex items-baseline gap-2">
+          <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{value}</h3>
+          <span className="text-[10px] font-bold text-slate-400 italic">{trend}</span>
+        </div>
       </div>
-      <div className={`w-12 h-12 ${bg} rounded-xl flex items-center justify-center`}>
+      <div className={`w-14 h-14 ${bg} rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3`}>
         {icon}
       </div>
-    </div>
-  );
-}
-
-function ScheduleItem({ time, title, type, status }: any) {
-  const statusColor = 
-    status === "Confirmed" ? "bg-green-100 text-green-700" :
-    status === "Pending" ? "bg-yellow-100 text-yellow-700" :
-    "bg-blue-100 text-blue-700";
-
-  return (
-    <div className="flex gap-4 items-center">
-      <div className="flex flex-col items-center min-w-12.5">
-        <span className="text-xs font-bold text-slate-700">{time.split(' ')[0]}</span>
-        <span className="text-[10px] text-slate-400">{time.split(' ')[1]}</span>
-      </div>
-      <div className="flex-1 p-3 bg-slate-50 rounded-xl border border-slate-100">
-        <div className="flex justify-between items-center">
-          <h4 className="text-sm font-semibold text-slate-800">{title}</h4>
-          <span className={`text-[10px] font-bold px-2 py-1 rounded-full ${statusColor}`}>
-            {status}
-          </span>
-        </div>
-        <p className="text-xs text-slate-500 mt-1">{type}</p>
-      </div>
-    </div>
+    </motion.div>
   );
 }
