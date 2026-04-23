@@ -333,9 +333,9 @@ function StatsData() {
   const percentage = Math.round((score / 75) * 100);
 
   const getSeverity = () => {
-    if (score <= 9) return { label: "Minimal", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
-    if (score <= 19) return { label: "Mild", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
-    if (score <= 29) return { label: "Moderate", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
+    if (score <= 25) return { label: "Minimal", color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" };
+    if (score <= 50) return { label: "Mild", color: "text-yellow-600", bg: "bg-yellow-50", border: "border-yellow-200" };
+    if (score <= 100) return { label: "Moderate", color: "text-orange-600", bg: "bg-orange-50", border: "border-orange-200" };
     return { label: "Severe", color: "text-red-600", bg: "bg-red-50", border: "border-red-200" };
   };
 
@@ -471,8 +471,8 @@ function StatsData() {
             </p>
 
             <div className="flex gap-3 w-full pt-2">
-              <button onClick={() => router.push("/assessment")} className="flex-1 border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
-                Retake Test
+              <button onClick={() => router.push("/activites")} className="flex-1 border border-slate-200 text-slate-600 py-2 rounded-xl text-sm font-medium hover:bg-slate-50 transition-colors">
+                Activities
               </button>
               <button onClick={() => router.push("/profile")} className="flex-1 bg-teal-600 text-white py-2 rounded-xl text-sm font-medium hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all">
                 Profile
