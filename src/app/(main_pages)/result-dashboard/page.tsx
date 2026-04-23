@@ -246,10 +246,10 @@ function ResultDashboardContent() {
 
                 {/* Secondary */}
                 <button
-                  onClick={() => router.push("/assessment")}
+                  onClick={() => router.push("/activites")}
                   className="px-4 py-2.5 text-sm font-medium text-slate-600 bg-slate-100 rounded-xl hover:bg-slate-200 transition"
                 >
-                  Retake
+                  Activities
                 </button>
 
                 {/* Primary */}
@@ -263,7 +263,7 @@ function ResultDashboardContent() {
             </div>
 
             {/* Memory Score Card */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            {/* <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 bg-purple-50 rounded-lg text-purple-600">
                   🧠
@@ -292,16 +292,15 @@ function ResultDashboardContent() {
                   Higher levels indicate better attention span and working memory.
                 </p>
               </div>
-            </div>
+            </div> */}
 
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+            {/* <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
               <h2 className="text-lg font-bold text-slate-800 mb-4">
                 Personal Insights
               </h2>
 
               <div className="space-y-4">
 
-                {/* Mood */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
                   <span className="text-sm text-slate-500">Mood</span>
                   <span className="font-semibold text-slate-800">
@@ -309,7 +308,6 @@ function ResultDashboardContent() {
                   </span>
                 </div>
 
-                {/* Financial */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50">
                   <span className="text-sm text-slate-500">
                     Financial Stress
@@ -326,7 +324,6 @@ function ResultDashboardContent() {
                   </span>
                 </div>
 
-                {/* Insight */}
                 <div className="p-4 rounded-xl bg-blue-50 border border-blue-100 text-sm text-blue-900">
                   {mood === "Sad" || financial === "High"
                     ? "Your emotional and financial inputs suggest elevated stress. Consider reaching out for support."
@@ -334,11 +331,11 @@ function ResultDashboardContent() {
                 </div>
 
               </div>
-            </div>
+            </div> */}
 
-            <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
+{/* Mood */}
+            {/* <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6">
 
-              {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h2 className="text-lg font-bold text-slate-800">
@@ -351,24 +348,20 @@ function ResultDashboardContent() {
                 <div className="text-2xl">🧠</div>
               </div>
 
-              {/* Metrics */}
               <div className="space-y-5">
 
-                {/* Mood */}
                 <Metric
                   label="Mood"
                   value={moodScore}
                   type="mood"
                 />
 
-                {/* Energy */}
                 <Metric
                   label="Energy"
                   value={energy}
                   type="energy"
                 />
 
-                {/* Stress */}
                 <Metric
                   label="Stress"
                   value={stress}
@@ -377,11 +370,10 @@ function ResultDashboardContent() {
 
               </div>
 
-              {/* Insight */}
               <div className="mt-6 p-4 rounded-xl bg-slate-50 border border-slate-100 text-sm text-slate-600">
                 {generateInsight(moodScore, energy, stress)}
               </div>
-            </div>
+            </div> */}
 
             {/* Clinical Note */}
             <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
