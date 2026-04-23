@@ -69,9 +69,9 @@ export default function Signup() {
 
   // Redirect based on role
   if (data.role === "doctor") {
-    router.push("/doctor-dashboard");
+    router.push("/login");
   } else {
-    router.push("/dashboard");
+    router.push("/login");
   }
 };
 

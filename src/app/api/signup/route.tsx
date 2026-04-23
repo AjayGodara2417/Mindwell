@@ -23,10 +23,44 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // -------- Doctor Signup --------
+    // -------- Doctor Signup --------
     if (role === "doctor") {
+      // ✅ Check if doctor_id already exists
+      const [existingDoctor]: any = await db.query(
+        "SELECT id FROM doctors WHERE doctor_id = ?",
+        [doctorId]
+      );
+
+      if (existingDoctor.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Doctor ID already exists. Please choose a unique ID.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // ✅ (Optional) Check if email already exists
+      const [existingEmail]: any = await db.query(
+        "SELECT id FROM doctors WHERE email = ?",
+        [email]
+      );
+
+      if (existingEmail.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Email already registered as a doctor.",
+          },
+          { status: 400 }
+        );
+      }
+
+      // ✅ Insert doctor
       const [result]: any = await db.query(
         `INSERT INTO doctors (full_name,email,doctor_id,speciality,password)
-         VALUES (?,?,?,?,?)`,
+     VALUES (?,?,?,?,?)`,
         [fullName, email, doctorId, speciality || null, hashedPassword]
       );
 
@@ -44,10 +78,26 @@ export async function POST(req: NextRequest) {
     }
 
     // -------- Patient Signup --------
+    // -------- Patient Signup --------
     if (role === "patient") {
+      const [existingPatient]: any = await db.query(
+        "SELECT id FROM patients WHERE email = ?",
+        [email]
+      );
+
+      if (existingPatient.length > 0) {
+        return NextResponse.json(
+          {
+            success: false,
+            message: "Email already registered.",
+          },
+          { status: 400 }
+        );
+      }
+
       const [result]: any = await db.query(
         `INSERT INTO patients (full_name,email,symptoms,password)
-         VALUES (?,?,?,?)`,
+     VALUES (?,?,?,?)`,
         [fullName, email, symptoms?.join(",") || "", hashedPassword]
       );
 
