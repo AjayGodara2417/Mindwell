@@ -18,7 +18,7 @@ export default function Signup() {
     confirmPassword: "",
   });
 
-  const symptomsList = ["Anxiety", "Depression", "Stress", "Other"];
+  const symptomsList = ["Anxiety", "Depression", "Stress"];
 
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({
@@ -76,7 +76,7 @@ export default function Signup() {
 };
 
   return (
-  <div className="max-h-11/12 flex items-center justify-center bg-gray-50 px-4 pt-4">
+  <div className="max-h-11/12 lg:pt-15 flex items-center justify-center bg-gray-50 px-4 pt-4">
     
     <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm p-8 space-y-2">
 

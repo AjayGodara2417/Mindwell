@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 export default function Login() {
   const [role, setRole] = useState<"patient" | "doctor">("patient");
   const [email, setEmail] = useState("");
-  const [doctor_id, setDoctor_id] = useState("");
+  // const [doctor_id, setDoctor_id] = useState("");
   const [password, setPassword] = useState("");
 
   const router = useRouter();
