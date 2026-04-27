@@ -24,6 +24,12 @@ export default function PatientsPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  
+  const [showModal, setShowModal] = useState(false);
+  const [patientEmail, setPatientEmail] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
     const doctorId = localStorage.getItem("doctorId");
 
@@ -54,6 +60,47 @@ export default function PatientsPage() {
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
+  const handleAddPatient = async () => {
+  if (!patientEmail.trim()) return;
+
+  setLoading(true);
+  setError(""); // reset old error
+
+  try {
+    const res = await fetch("/api/add-patient", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: patientEmail,
+        doctor_id: localStorage.getItem("doctorId"),
+      }),
+    });
+
+    const data = await res.json();
+    
+    alert("Patient added successfully");
+
+    if (!data.success) {
+      setError(data.message || "Patient not found");
+      return; // ❗ exits, BUT finally will still run
+    }
+
+    // ✅ success case
+    setPatientEmail("");
+    setShowModal(false);
+    // fetchPatients();
+
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong");
+  } finally {
+    // ✅ THIS LINE FIXES YOUR ISSUE
+    setLoading(false);
+  }
+};
+
   return (
     <div className="bg-slate-50 min-h-screen p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
@@ -69,9 +116,60 @@ export default function PatientsPage() {
             </p>
           </div>
 
-          <button className="bg-teal-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all flex items-center gap-2">
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-teal-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all flex items-center gap-2"
+          >
             <Plus size={16} /> Add Patient
           </button>
+
+          {showModal && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl animate-in fade-in zoom-in-95">
+
+                <h2 className="text-xl font-bold text-slate-800 mb-4">
+                  Add Patient
+                </h2>
+
+                <p className="text-sm text-slate-500 mb-4">
+                  Enter patient email to link with your account
+                </p>
+
+                <input
+                  type="email"
+                  placeholder="patient@email.com"
+                  value={patientEmail}
+                  onChange={(e) => setPatientEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none mb-3"
+                />
+
+                {error && (
+                  <p className="text-red-500 text-xs mb-3">{error}</p>
+                )}
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      setPatientEmail("");
+                      setError("");
+                    }}
+                    className="px-4 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleAddPatient}
+                    disabled={adding}
+                    className="px-5 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 disabled:opacity-50"
+                  >
+                    {adding ? "Adding..." : "Add"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* SEARCH */}
@@ -131,15 +229,10 @@ export default function PatientsPage() {
                     </div>
 
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        p.risk_level === "High"
-                          ? "bg-red-50 text-red-600 border-red-200"
-                          : p.risk_level === "Moderate"
-                          ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                          : "bg-emerald-50 text-emerald-600 border-emerald-200"
-                      }`}
+                      className={` ${
+                        p.risk_level }`}
                     >
-                      {p.risk_level || "Normal"}
+                      {/* {p.risk_level || "Normal"} */}
                     </span>
                   </div>
 

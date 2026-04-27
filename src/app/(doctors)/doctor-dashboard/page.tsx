@@ -6,9 +6,8 @@ import {
   Search,
   ArrowRight,
   Users,
-  AlertCircle,
-  Brain,
   Plus,
+  Calendar,
 } from "lucide-react";
 
 type Patient = {
@@ -16,8 +15,6 @@ type Patient = {
   full_name: string;
   email: string;
   symptoms: string;
-  risk_level: "High" | "Moderate" | "Low";
-  last_checkin: string;
 };
 
 export default function DoctorDashboard() {
@@ -67,10 +64,6 @@ export default function DoctorDashboard() {
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const highRiskCount = patients.filter(
-    (p) => p.risk_level === "High"
-  ).length;
-
   const handleAddPatient = async () => {
   if (!patientEmail.trim()) return;
 
@@ -90,6 +83,8 @@ export default function DoctorDashboard() {
     });
 
     const data = await res.json();
+
+    alert("Patient added successfully");
 
     if (!data.success) {
       setError(data.message || "Patient not found");
@@ -189,14 +184,9 @@ export default function DoctorDashboard() {
             icon={<Users size={20} />}
           />
           <StatCard
-            title="High Risk"
-            value={highRiskCount}
-            icon={<AlertCircle size={20} />}
-          />
-          <StatCard
-            title="Avg Score"
-            value="72%"
-            icon={<Brain size={20} />}
+            title="Today's Date"
+            value={new Date().toLocaleDateString()}
+            icon={<Calendar size={20} />}
           />
         </div>
 
@@ -220,11 +210,11 @@ export default function DoctorDashboard() {
           </div>
 
           {/* TABLE HEADER */}
-          <div className="hidden md:grid grid-cols-4 text-xs text-slate-400 mb-3 px-3">
+          <div className="hidden md:grid grid-cols-3 text-xs text-slate-400 mb-3 px-3">
             <span>Patient</span>
             <span>Condition</span>
-            <span>Status</span>
-            <span className="text-right">Last Check</span>
+            {/* <span></span> */}
+            <span className="text-right">Check Details</span>
           </div>
 
           {/* LIST */}
@@ -246,7 +236,7 @@ export default function DoctorDashboard() {
                       `/doctor-dashboard/patient/${p.email}`
                     )
                   }
-                  className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
+                  className="grid grid-cols-1 md:grid-cols-3 items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
                 >
 
                   {/* PROFILE */}
@@ -270,24 +260,11 @@ export default function DoctorDashboard() {
                   </div>
 
                   {/* STATUS */}
-                  <div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium border ${p.risk_level === "High"
-                        ? "bg-red-50 text-red-600 border-red-200"
-                        : p.risk_level === "Moderate"
-                          ? "bg-yellow-50 text-yellow-600 border-yellow-200"
-                          : "bg-emerald-50 text-emerald-600 border-emerald-200"
-                        }`}
-                    >
-                      {p.risk_level}
-                    </span>
-                  </div>
+                  {/* <div>
+                  </div> */}
 
                   {/* ACTION */}
                   <div className="flex justify-end items-center gap-3">
-                    <span className="text-xs text-slate-400">
-                      {p.last_checkin}
-                    </span>
                     <ArrowRight
                       size={16}
                       className="text-slate-400"
