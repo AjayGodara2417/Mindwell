@@ -2,17 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   ArrowRight,
   Users,
-  Activity,
-  Plus,
   AlertCircle,
-  BrainCircuit,
-  Filter,
-  MoreVertical,
+  Brain,
+  Plus,
 } from "lucide-react";
 
 type Patient = {
@@ -30,27 +26,35 @@ export default function DoctorDashboard() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const [showModal, setShowModal] = useState(false);
+  const [patientEmail, setPatientEmail] = useState("");
+  const [adding, setAdding] = useState(false);
+  const [error, setError] = useState("");
+
   useEffect(() => {
-    const doctorId = typeof window !== 'undefined' ? localStorage.getItem("doctorId") : null;
+    const doctorId =
+      typeof window !== "undefined"
+        ? localStorage.getItem("doctorId")
+        : null;
 
     const fetchPatients = async () => {
       try {
-        // Simulating a clinical API fetch with risk-level mapping
-        const res = await fetch(`/api/doctor-patients?doctor_id=${doctorId}`);
+        const res = await fetch(
+          `/api/doctor-patients?doctor_id=${doctorId}`
+        );
         const data = await res.json();
-        
-        // Mocking additional clinical data if not present in API
-        const enhancedData = data.patients.map((p: any) => ({
+
+        const enhanced = data.patients.map((p: any) => ({
           ...p,
-          risk_level: p.risk_level || (Math.random() > 0.7 ? "High" : "Low"),
-          last_checkin: "2 hours ago"
+          risk_level:
+            p.risk_level ||
+            (Math.random() > 0.7 ? "High" : "Low"),
+          last_checkin: "2 hours ago",
         }));
 
-        if (data.success) {
-          setPatients(enhancedData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch patients", error);
+        if (data.success) setPatients(enhanced);
+      } catch (err) {
+        console.error(err);
       } finally {
         setLoading(false);
       }
@@ -63,203 +67,264 @@ export default function DoctorDashboard() {
     p.full_name.toLowerCase().includes(search.toLowerCase())
   );
 
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { 
-      opacity: 1, 
-      y: 0,
-      transition: { duration: 0.5, staggerChildren: 0.1 }
-    }
-  };
+  const highRiskCount = patients.filter(
+    (p) => p.risk_level === "High"
+  ).length;
 
-  const itemVariants = {
-    hidden: { opacity: 0, x: -10 },
-    visible: { opacity: 1, x: 0 }
-  };
+  const handleAddPatient = async () => {
+  if (!patientEmail.trim()) return;
+
+  setLoading(true);
+  setError(""); // reset old error
+
+  try {
+    const res = await fetch("/api/add-patient", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email: patientEmail,
+        doctor_id: localStorage.getItem("doctorId"),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!data.success) {
+      setError(data.message || "Patient not found");
+      return; // ❗ exits, BUT finally will still run
+    }
+
+    // ✅ success case
+    setPatientEmail("");
+    setShowModal(false);
+    // fetchPatients();
+
+  } catch (err) {
+    console.error(err);
+    setError("Something went wrong");
+  } finally {
+    // ✅ THIS LINE FIXES YOUR ISSUE
+    setLoading(false);
+  }
+};
 
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-      className="min-h-screen bg-slate-50 flex flex-col"
-    >
-      <main className="flex-1 p-4 md:p-10 lg:p-12 overflow-y-auto">
-        <div className="max-w-7xl mx-auto space-y-10">
-          
-          {/* HEADER AREA */}
-          <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-            <div className="space-y-1">
-              <div className="flex items-center gap-2 mb-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">System Live</span>
-              </div>
-              <h1 className="text-4xl font-black text-slate-900 tracking-tight">Clinical Insights</h1>
-              <p className="text-slate-500 font-medium">Analyzing behavioral patterns for {patients.length} patients.</p>
-            </div>
-            
-            <motion.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-bold transition-all flex items-center gap-3 shadow-xl shadow-indigo-200 group"
-            >
-              <div className="bg-white/20 p-1 rounded-lg">
-                <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" />
-              </div>
-              Onboard New Patient
-            </motion.button>
-          </header>
+    <div className="bg-slate-50 min-h-screen p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
 
-          {/* STATS GRID */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard 
-              title="Active Roster" 
-              value={patients.length.toString()} 
-              icon={<Users className="text-indigo-600" />} 
-              bg="bg-indigo-50"
-              trend="+2 this week"
-            />
-            <StatCard 
-              title="Critical Priority" 
-              value={patients.filter(p => p.risk_level === "High").length.toString()} 
-              icon={<AlertCircle className="text-rose-600" />} 
-              bg="bg-rose-50"
-              trend="Requires Review"
-            />
-            <StatCard 
-              title="Avg. Wellness Score" 
-              value="72%" 
-              icon={<BrainCircuit className="text-emerald-600" />} 
-              bg="bg-emerald-50"
-              trend="System Average"
-            />
+        {/* HEADER */}
+        <div className="flex justify-between items-end">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+              Doctor Dashboard 👨‍⚕️
+            </h1>
+            <p className="text-slate-500 text-sm mt-1">
+              Monitor patient health and track risk levels.
+            </p>
           </div>
 
-          {/* PATIENT DIRECTORY */}
-          <section className="space-y-6">
-            <div className="flex items-center justify-between px-2">
-              <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
-                Patient Directory
-                <span className="bg-slate-200 text-slate-600 text-[10px] px-2 py-0.5 rounded-full uppercase">Live</span>
-              </h2>
-              <button className="text-slate-400 hover:text-indigo-600 flex items-center gap-2 text-sm font-bold transition-colors">
-                <Filter size={16} /> Filter
-              </button>
-            </div>
+          <button
+            onClick={() => setShowModal(true)}
+            className="bg-teal-600 text-white px-5 py-2 rounded-xl text-sm font-medium hover:bg-teal-700 shadow-lg shadow-teal-500/20 transition-all flex items-center gap-2"
+          >
+            <Plus size={16} /> Add Patient
+          </button>
 
-            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-200/60 overflow-hidden backdrop-blur-sm">
-              {/* Toolbar */}
-              <div className="px-8 py-6 border-b border-slate-100 flex flex-col md:flex-row gap-4 items-center justify-between">
-                <div className="relative w-full md:w-96">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                  <input
-                    placeholder="Search by name, ID or status..."
-                    className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-medium focus:ring-4 focus:ring-indigo-500/5 focus:border-indigo-600 transition-all outline-none"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  {["All", "High Risk", "Recently Added"].map((tab) => (
-                    <button key={tab} className="px-4 py-2 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 transition-colors">
-                      {tab}
-                    </button>
-                  ))}
+          {showModal && (
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+              <div className="bg-white w-full max-w-md p-6 rounded-2xl shadow-xl animate-in fade-in zoom-in-95">
+
+                <h2 className="text-xl font-bold text-slate-800 mb-4">
+                  Add Patient
+                </h2>
+
+                <p className="text-sm text-slate-500 mb-4">
+                  Enter patient email to link with your account
+                </p>
+
+                <input
+                  type="email"
+                  placeholder="patient@email.com"
+                  value={patientEmail}
+                  onChange={(e) => setPatientEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none mb-3"
+                />
+
+                {error && (
+                  <p className="text-red-500 text-xs mb-3">{error}</p>
+                )}
+
+                <div className="flex justify-end gap-3 mt-4">
+                  <button
+                    onClick={() => {
+                      setShowModal(false);
+                      setPatientEmail("");
+                      setError("");
+                    }}
+                    className="px-4 py-2 text-sm rounded-lg border border-slate-200 hover:bg-slate-50"
+                  >
+                    Cancel
+                  </button>
+
+                  <button
+                    onClick={handleAddPatient}
+                    disabled={adding}
+                    className="px-5 py-2 bg-teal-600 text-white rounded-lg text-sm hover:bg-teal-700 disabled:opacity-50"
+                  >
+                    {adding ? "Adding..." : "Add"}
+                  </button>
                 </div>
               </div>
-
-              {/* Patient List */}
-              <div className="p-2 md:p-4">
-                <AnimatePresence mode="popLayout">
-                  {loading ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center space-y-4">
-                      <Activity className="mx-auto w-8 h-8 text-indigo-500 animate-spin" />
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Decrypting Clinical Records</p>
-                    </motion.div>
-                  ) : filteredPatients.length === 0 ? (
-                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-32 text-center text-slate-400 font-bold italic">
-                      No clinical matches found in current view.
-                    </motion.div>
-                  ) : (
-                    <div className="grid gap-2">
-                      {filteredPatients.map((p) => (
-                        <motion.div
-                          layout
-                          key={p.id}
-                          variants={itemVariants}
-                          onClick={() => router.push(`/doctor-dashboard/patient/${p.email}`)}
-                          className="group grid grid-cols-1 md:grid-cols-4 items-center p-4 rounded-2xl hover:bg-indigo-50/40 transition-all duration-300 cursor-pointer border border-transparent hover:border-indigo-100"
-                        >
-                          {/* Profile Column */}
-                          <div className="flex items-center gap-4 col-span-1">
-                            <div className="w-12 h-12 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black group-hover:scale-110 transition-transform">
-                              {p.full_name.charAt(0)}
-                            </div>
-                            <div className="min-w-0">
-                              <h4 className="font-bold text-slate-900 truncate group-hover:text-indigo-600 transition-colors">
-                                {p.full_name}
-                              </h4>
-                              <p className="text-[10px] text-slate-400 font-medium truncate uppercase tracking-tighter">{p.email}</p>
-                            </div>
-                          </div>
-
-                          {/* Symptoms Column */}
-                          <div className="hidden md:flex flex-col col-span-1">
-                            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest mb-1">Primary Condition</span>
-                            <span className="text-xs font-bold text-slate-600 truncate">{p.symptoms || "Routine Monitoring"}</span>
-                          </div>
-
-                          {/* Priority/Status Column */}
-                          <div className="hidden md:flex flex-col col-span-1 items-center">
-                            <span className="text-[9px] font-black uppercase text-slate-300 tracking-widest mb-1">Risk Status</span>
-                            <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
-                              p.risk_level === "High" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"
-                            }`}>
-                              <span className={`w-1 h-1 rounded-full ${p.risk_level === "High" ? "bg-rose-500 animate-pulse" : "bg-emerald-500"}`} />
-                              {p.risk_level}
-                            </div>
-                          </div>
-
-                          {/* Action Column */}
-                          <div className="flex items-center justify-end gap-4 col-span-1">
-                            <div className="text-right hidden lg:block">
-                              <p className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Last Entry</p>
-                              <p className="text-xs font-bold text-slate-500">{p.last_checkin}</p>
-                            </div>
-                            <div className="p-2 rounded-xl group-hover:bg-indigo-600 group-hover:text-white transition-all text-slate-300">
-                              <ArrowRight size={18} />
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </AnimatePresence>
-              </div>
             </div>
-          </section>
+          )}
         </div>
-      </main>
-    </motion.div>
+
+        {/* STATS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <StatCard
+            title="Total Patients"
+            value={patients.length}
+            icon={<Users size={20} />}
+          />
+          <StatCard
+            title="High Risk"
+            value={highRiskCount}
+            icon={<AlertCircle size={20} />}
+          />
+          <StatCard
+            title="Avg Score"
+            value="72%"
+            icon={<Brain size={20} />}
+          />
+        </div>
+
+        {/* PATIENT LIST */}
+        <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+
+          {/* SEARCH */}
+          <div className="flex flex-col md:flex-row justify-between gap-4 mb-6">
+            <div className="relative w-full md:w-96">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                size={18}
+              />
+              <input
+                placeholder="Search patients..."
+                className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-teal-500 outline-none"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* TABLE HEADER */}
+          <div className="hidden md:grid grid-cols-4 text-xs text-slate-400 mb-3 px-3">
+            <span>Patient</span>
+            <span>Condition</span>
+            <span>Status</span>
+            <span className="text-right">Last Check</span>
+          </div>
+
+          {/* LIST */}
+          <div className="space-y-3">
+            {loading ? (
+              <p className="text-center py-10 text-slate-400">
+                Loading patients...
+              </p>
+            ) : filteredPatients.length === 0 ? (
+              <p className="text-center py-10 text-slate-400">
+                No patients found
+              </p>
+            ) : (
+              filteredPatients.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() =>
+                    router.push(
+                      `/doctor-dashboard/patient/${p.email}`
+                    )
+                  }
+                  className="grid grid-cols-1 md:grid-cols-4 items-center gap-4 p-4 rounded-xl hover:bg-slate-50 transition cursor-pointer border border-transparent hover:border-slate-200"
+                >
+
+                  {/* PROFILE */}
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-teal-600 text-white flex items-center justify-center font-bold">
+                      {p.full_name.charAt(0)}
+                    </div>
+                    <div>
+                      <p className="font-medium text-slate-800">
+                        {p.full_name}
+                      </p>
+                      <p className="text-xs text-slate-400">
+                        {p.email}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* CONDITION */}
+                  <div className="text-sm text-slate-600">
+                    {p.symptoms || "General Checkup"}
+                  </div>
+
+                  {/* STATUS */}
+                  <div>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-medium border ${p.risk_level === "High"
+                        ? "bg-red-50 text-red-600 border-red-200"
+                        : p.risk_level === "Moderate"
+                          ? "bg-yellow-50 text-yellow-600 border-yellow-200"
+                          : "bg-emerald-50 text-emerald-600 border-emerald-200"
+                        }`}
+                    >
+                      {p.risk_level}
+                    </span>
+                  </div>
+
+                  {/* ACTION */}
+                  <div className="flex justify-end items-center gap-3">
+                    <span className="text-xs text-slate-400">
+                      {p.last_checkin}
+                    </span>
+                    <ArrowRight
+                      size={16}
+                      className="text-slate-400"
+                    />
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
-function StatCard({ title, value, icon, bg, trend }: any) {
+/* ================= STAT CARD ================= */
+
+function StatCard({
+  title,
+  value,
+  icon,
+}: {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+}) {
   return (
-    <motion.div 
-      whileHover={{ y: -5 }}
-      className="bg-white p-8 rounded-[2.5rem] border border-slate-200/60 flex items-center justify-between group shadow-sm hover:shadow-xl hover:shadow-indigo-500/5 transition-all"
-    >
-      <div className="space-y-1">
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.2em]">{title}</p>
-        <div className="flex items-baseline gap-2">
-          <h3 className="text-4xl font-black text-slate-900 tracking-tighter">{value}</h3>
-          <span className="text-[10px] font-bold text-slate-400 italic">{trend}</span>
-        </div>
+    <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100 flex items-center justify-between">
+      <div>
+        <p className="text-xs text-slate-400">{title}</p>
+        <h3 className="text-3xl font-bold text-slate-800">
+          {value}
+        </h3>
       </div>
-      <div className={`w-14 h-14 ${bg} rounded-2xl flex items-center justify-center transition-all duration-500 group-hover:scale-110 group-hover:rotate-3`}>
+      <div className="p-3 bg-teal-50 rounded-lg text-teal-600">
         {icon}
       </div>
-    </motion.div>
+    </div>
   );
 }
