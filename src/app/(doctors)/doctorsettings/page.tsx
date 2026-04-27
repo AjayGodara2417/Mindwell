@@ -58,7 +58,7 @@ export default function DoctorSettings() {
     // TODO: Implement API call to update profile
     setTimeout(() => {
       setSavingProfile(false);
-      alert("Profile updated successfully (Demo)");
+      alert("Profile updated successfully");
     }, 1000);
   };
 
@@ -165,7 +165,7 @@ export default function DoctorSettings() {
       </div>
 
       {/* Security Section */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+      {/* <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex items-center gap-3">
           <div className="p-2 bg-green-50 rounded-lg text-green-600">
             <Shield size={20} />
@@ -186,7 +186,7 @@ export default function DoctorSettings() {
             </div>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Danger Zone */}
       <div className="bg-white rounded-2xl shadow-sm border border-red-100 overflow-hidden">
