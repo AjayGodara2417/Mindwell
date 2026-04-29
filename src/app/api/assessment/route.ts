@@ -5,14 +5,13 @@ import db from "@/lib/db";
 
 export async function POST(req: NextRequest) {
   try {
-
     const body = await req.json();
     const { email, score } = body;
 
     if (!email || score === undefined) {
       return NextResponse.json(
         { success: false, message: "Email and score are required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +33,7 @@ export async function POST(req: NextRequest) {
       `INSERT INTO assessments 
        (patient_email, score, percentage, severity)
        VALUES (?,?,?,?)`,
-      [email, score, percentage, severity]
+      [email, score, percentage, severity],
     );
 
     return NextResponse.json({
@@ -44,19 +43,16 @@ export async function POST(req: NextRequest) {
         email,
         score,
         percentage,
-        severity
-      }
+        severity,
+      },
     });
-
   } catch (error) {
-
     console.error("Assessment Save Error:", error);
 
     return NextResponse.json(
       { success: false, message: "Failed to save assessment" },
-      { status: 500 }
+      { status: 500 },
     );
-
   }
 }
 
@@ -66,17 +62,30 @@ export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get("email");
     if (!email) {
-      return NextResponse.json({ success: false, message: "Email required" }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: "Email required" },
+        { status: 400 },
+      );
     }
 
     // Get latest 10 (newest first), then reverse to return oldest->newest
     const [rows]: any = await db.query(
-      `SELECT score, percentage, severity, created_at
-       FROM assessments
-       WHERE patient_email = ?
+      `SELECT 
+  score,
+  percentage,
+  severity,
+  created_at,
+  emotion,
+  emotion_score,
+  final_score,
+  recommendations,
+  diet,
+  consult_doctor
+FROM assessments
+WHERE patient_email = ?
        ORDER BY created_at DESC
        LIMIT 10`,
-      [email]
+      [email],
     );
 
     // rows is newest->oldest; reverse to oldest->newest for chart plotting
@@ -85,6 +94,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, history });
   } catch (error) {
     console.error("Assessment Fetch Error:", error);
-    return NextResponse.json({ success: false, message: "Failed to fetch assessments" }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: "Failed to fetch assessments" },
+      { status: 500 },
+    );
   }
 }

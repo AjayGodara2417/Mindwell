@@ -24,6 +24,14 @@ type Assessment = {
   percentage: number;
   severity: string;
   created_at: string;
+
+  emotion?: string;
+  emotion_score?: number;
+  final_score?: number;
+  recommendations?: string[];
+  diet?: string[];
+  consult_doctor?: number;
+
   date?: string;
   index?: number;
 };
@@ -95,14 +103,14 @@ export default function PatientDetails() {
         const res2 = await fetch(`/api/sleep?email=${email}`);
         const data2 = await res2.json();
 
-        const res3 = await fetch(`/api/memory-assessment?email=${email}`);
-        const data3 = await res3.json();
+        // const res3 = await fetch(`/api/memory-assessment?email=${email}`);
+        // const data3 = await res3.json();
 
-        const res4 = await fetch(`/api/subjective-assessment?email=${email}`);
-        const data4 = await res4.json();
+        // const res4 = await fetch(`/api/subjective-assessment?email=${email}`);
+        // const data4 = await res4.json();
 
-        const res5 = await fetch(`/api/rating-assessment?email=${email}`);
-        const data5 = await res5.json();
+        // const res5 = await fetch(`/api/rating-assessment?email=${email}`);
+        // const data5 = await res5.json();
 
         const res6 = await fetch(`/api/get-cognitive-data?email=${email}`);
         const data6 = await res6.json();
@@ -119,7 +127,8 @@ export default function PatientDetails() {
           const formatted = data1.history
             .sort(
               (a: Assessment, b: Assessment) =>
-                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+                new Date(a.created_at).getTime() -
+                new Date(b.created_at).getTime()
             )
             .map((a: Assessment, i: number) => ({
               ...a,
@@ -140,55 +149,55 @@ export default function PatientDetails() {
           });
           setSleepData(formatted);
         }
-        if (data3.success) {
-          const formatted = data3.data
-            .sort(
-              (a: Memory, b: Memory) =>
-                new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
-            )
-            .map((m: Memory, i: number) => {
-              const d = new Date(m.created_at!);
-              return {
-                ...m,
-                date: `${d.getDate()}/${d.getMonth() + 1}`,
-                index: i + 1,
-              };
-            });
+        // if (data3.success) {
+        //   const formatted = data3.data
+        //     .sort(
+        //       (a: Memory, b: Memory) =>
+        //         new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime()
+        //     )
+        //     .map((m: Memory, i: number) => {
+        //       const d = new Date(m.created_at!);
+        //       return {
+        //         ...m,
+        //         date: `${d.getDate()}/${d.getMonth() + 1}`,
+        //         index: i + 1,
+        //       };
+        //     });
 
-          setMemoryData(formatted);
-        }
-        if (data4.success) {
-          const formatted = data4.data
-            .sort(
-              (a: Subjective, b: Subjective) =>
-                new Date(a.created_at!).getTime() -
-                new Date(b.created_at!).getTime()
-            )
-            .map((s: Subjective) => ({
-              ...s,
-              date: new Date(s.created_at!).toLocaleDateString(),
-            }));
+        //   setMemoryData(formatted);
+        // }
+        // if (data4.success) {
+        //   const formatted = data4.data
+        //     .sort(
+        //       (a: Subjective, b: Subjective) =>
+        //         new Date(a.created_at!).getTime() -
+        //         new Date(b.created_at!).getTime()
+        //     )
+        //     .map((s: Subjective) => ({
+        //       ...s,
+        //       date: new Date(s.created_at!).toLocaleDateString(),
+        //     }));
 
-          setSubjectiveData(formatted);
-        }
-        if (data5.success) {
-          const formatted = data5.data
-            .sort(
-              (a: Rating, b: Rating) =>
-                new Date(a.created_at!).getTime() -
-                new Date(b.created_at!).getTime()
-            )
-            .map((r: Rating, i: number) => {
-              const d = new Date(r.created_at!);
-              return {
-                ...r,
-                date: `${d.getDate()}/${d.getMonth() + 1}`,
-                index: i + 1,
-              };
-            });
+        //   setSubjectiveData(formatted);
+        // }
+        // if (data5.success) {
+        //   const formatted = data5.data
+        //     .sort(
+        //       (a: Rating, b: Rating) =>
+        //         new Date(a.created_at!).getTime() -
+        //         new Date(b.created_at!).getTime()
+        //     )
+        //     .map((r: Rating, i: number) => {
+        //       const d = new Date(r.created_at!);
+        //       return {
+        //         ...r,
+        //         date: `${d.getDate()}/${d.getMonth() + 1}`,
+        //         index: i + 1,
+        //       };
+        //     });
 
-          setRatingData(formatted);
-        }
+        //   setRatingData(formatted);
+        // }
       } catch (err) {
         console.error(err);
       }
@@ -236,159 +245,153 @@ export default function PatientDetails() {
 
   if (loading) return <div className="p-10 flex items-center justify-center text-slate-500">Loading patient records...</div>;
 
+  const parseArray = (data: any): string[] => {
+    if (!data) return [];
+
+    // Already array
+    if (Array.isArray(data)) return data;
+
+    // Try JSON parse
+    try {
+      const parsed = JSON.parse(data);
+      return Array.isArray(parsed) ? parsed : [data];
+    } catch {
+      // fallback: treat as single string
+      return [data];
+    }
+  };
+
 
   const handleExportPDF = async () => {
-  const pdf = new jsPDF();
+    const pdf = new jsPDF();
 
-  let y = 15;
+    let y = 15;
 
-  // =========================
-  // LOGO (optional)
-  // =========================
-  const img = new Image();
-  img.src = "/logo.png"; // must be in /public
+    // =========================
+    // LOGO (optional)
+    // =========================
+    const img = new Image();
+    img.src = "/logo.png"; // must be in /public
 
-  await new Promise((resolve) => {
-    img.onload = resolve;
-  });
+    await new Promise((resolve) => {
+      img.onload = resolve;
+    });
 
-  pdf.addImage(img, "PNG", 10, y, 20, 20);
+    pdf.addImage(img, "PNG", 10, y, 20, 20);
 
-  // =========================
-  // CLINIC HEADER
-  // =========================
-  pdf.setFont("helvetica", "bold");
-  pdf.setFontSize(18);
-  pdf.text("MindWell Clinic", 35, y + 8);
+    // =========================
+    // CLINIC HEADER
+    // =========================
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(18);
+    pdf.text("MindWell Clinic", 35, y + 8);
 
-  pdf.setFontSize(10);
-  pdf.setFont("helvetica", "normal");
-  pdf.text("Mental Health & Cognitive Care", 35, y + 14);
+    pdf.setFontSize(10);
+    pdf.setFont("helvetica", "normal");
+    pdf.text("Mental Health & Cognitive Care", 35, y + 14);
 
-  pdf.setFontSize(9);
-  pdf.text("Email: support@mindwell.com | Phone: +91-XXXXXXXXXX", 35, y + 20);
+    pdf.setFontSize(9);
+    pdf.text("Email: support@mindwell.com | Phone: +91-XXXXXXXXXX", 35, y + 20);
 
-  // LINE
-  pdf.line(10, y + 25, 200, y + 25);
+    // LINE
+    pdf.line(10, y + 25, 200, y + 25);
 
-  y += 35;
+    y += 35;
 
-  // =========================
-  // REPORT TITLE
-  // =========================
-  pdf.setFontSize(14);
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Patient Medical Report", 10, y);
+    // =========================
+    // REPORT TITLE
+    // =========================
+    pdf.setFontSize(14);
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Patient Medical Report", 10, y);
 
-  y += 8;
+    y += 8;
 
-  pdf.setFontSize(9);
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 10, y);
+    pdf.setFontSize(9);
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Generated on: ${new Date().toLocaleDateString()}`, 10, y);
 
-  y += 10;
+    y += 10;
 
-  // =========================
-  // PATIENT INFO
-  // =========================
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Patient Information", 10, y);
+    // =========================
+    // PATIENT INFO
+    // =========================
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Patient Information", 10, y);
 
-  y += 6;
-  pdf.setFont("helvetica", "normal");
-  pdf.text(`Email: ${email}`, 10, y);
-
-  y += 10;
-
-  // =========================
-  // SUMMARY BOX
-  // =========================
-  pdf.setFillColor(240, 248, 255);
-  pdf.rect(10, y, 190, 25, "F");
-
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Summary", 12, y + 6);
-
-  pdf.setFont("helvetica", "normal");
-  pdf.setFontSize(10);
-
-  pdf.text(`Emotional Score: ${latest?.score || 0}`, 12, y + 12);
-  pdf.text(`Sleep Avg: ${avgSleep} hrs`, 70, y + 12);
-  pdf.text(`Memory Level: ${latestMemory?.level || 0}`, 130, y + 12);
-
-  y += 35;
-
-  // =========================
-  // SUBJECTIVE
-  // =========================
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Subjective Report", 10, y);
-
-  y += 6;
-  pdf.setFont("helvetica", "normal");
-
-  pdf.text(`Mood: ${latestSubjective?.mood || "N/A"}`, 10, y);
-  y += 6;
-
-  pdf.text(`Stress: ${latestRating?.stress || 0}/10`, 10, y);
-  y += 6;
-
-  pdf.text(
-    `Thoughts: ${latestSubjective?.thoughts || "None"}`,
-    10,
-    y,
-    { maxWidth: 180 }
-  );
-
-  y += 12;
-
-  // =========================
-  // COGNITIVE TABLE STYLE
-  // =========================
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Cognitive Analysis", 10, y);
-
-  y += 8;
-
-  const cognitiveRows = [
-    ["Memory", domainScores.memory],
-    ["Attention", domainScores.attention],
-    ["Speed", domainScores.speed],
-    ["Executive", domainScores.executive],
-  ];
-
-  cognitiveRows.forEach(([label, value]) => {
-    pdf.text(`${label}:`, 10, y);
-    pdf.text(String(value), 60, y);
     y += 6;
-  });
+    pdf.setFont("helvetica", "normal");
+    pdf.text(`Email: ${email}`, 10, y);
 
-  y += 6;
+    y += 10;
 
-  // =========================
-  // AI INSIGHT
-  // =========================
-  pdf.setFont("helvetica", "bold");
-  pdf.text("Clinical Insight", 10, y);
+    // =========================
+    // SUMMARY BOX
+    // =========================
+    pdf.setFillColor(240, 248, 255);
+    pdf.rect(10, y, 190, 25, "F");
 
-  y += 6;
-  pdf.setFont("helvetica", "normal");
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Summary", 12, y + 6);
 
-  const insight = `Patient shows stable emotional trends. Mood is ${latestSubjective?.mood || "unknown"} with stress at ${latestRating?.stress || 0}/10. Cognitive performance varies across domains.`;
+    pdf.setFont("helvetica", "normal");
+    pdf.setFontSize(10);
 
-  pdf.text(insight, 10, y, { maxWidth: 180 });
+    pdf.text(`Latest Assessment Score: ${latest?.score || 0}`, 12, y + 12);
+    pdf.text(`Sleep Avg: ${avgSleep} hrs`, 70, y + 12);
+    pdf.text(`Memory Level: ${latestMemory?.level || 0}`, 130, y + 12);
 
-  // =========================
-  // FOOTER
-  // =========================
-  pdf.setFontSize(9);
-  pdf.setTextColor(120);
+    y += 35;
 
-  pdf.text("Doctor Signature: ____________________", 10, 270);
-  pdf.text("Generated by MindWell System", 140, 285);
+    // =========================
 
-  pdf.save(`Patient_Report_${email}.pdf`);
-};
+    // =========================
+    // COGNITIVE TABLE STYLE
+    // =========================
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Cognitive Analysis", 10, y);
+
+    y += 8;
+
+    const cognitiveRows = [
+      ["Memory", domainScores.memory],
+      ["Attention", domainScores.attention],
+      ["Speed", domainScores.speed],
+      ["Executive", domainScores.executive],
+    ];
+
+    cognitiveRows.forEach(([label, value]) => {
+      pdf.text(`${label}:`, 10, y);
+      pdf.text(String(value), 60, y);
+      y += 6;
+    });
+
+    y += 6;
+
+    // =========================
+    // AI INSIGHT
+    // =========================
+    pdf.setFont("helvetica", "bold");
+    pdf.text("Clinical Insight", 10, y);
+
+    y += 6;
+    pdf.setFont("helvetica", "normal");
+
+    const insight = `Patient shows stable emotional trends. Assessment score is ${latest?.score || "unknown"} with stress at ${latestRating?.stress || 0}/10. Cognitive performance varies across domains.`;
+
+    pdf.text(insight, 10, y, { maxWidth: 180 });
+
+    // =========================
+    // FOOTER
+    // =========================
+    pdf.setFontSize(9);
+    pdf.setTextColor(120);
+
+    pdf.text("Doctor Signature: ____________________", 10, 270);
+    pdf.text("Generated by MindWell System", 140, 285);
+
+    pdf.save(`Patient_Report_${email}.pdf`);
+  };
 
   return (
     <div ref={reportRef} className="pdf-safe">
@@ -510,6 +513,12 @@ export default function PatientDetails() {
           <div className="space-y-4">
             <StatBox label="Latest Severity" value={latest?.severity || "N/A"} color="text-orange-600" bg="bg-orange-50" />
             <StatBox label="Assessment %" value={`${latest?.percentage || 0}%`} color="text-blue-600" bg="bg-blue-50" />
+            <StatBox
+              label="Detected Emotion"
+              value={latest?.emotion || "N/A"}
+              color="text-red-600"
+              bg="bg-red-50"
+            />
             <StatBox label="Total Records" value={assessments.length} color="text-slate-600" bg="bg-slate-100" />
           </div>
 
@@ -527,16 +536,18 @@ export default function PatientDetails() {
         <div className="bg-blue-50 border border-blue-100 rounded-2xl p-6">
           <h3 className="text-blue-800 font-bold mb-2 flex items-center gap-2">
             <CheckCircle2 size={20} />
-            AI Clinical Insight
+            Clinical Insight
           </h3>
           <p className="text-blue-900/80 leading-relaxed text-sm">
             Patient demonstrates a <span className="font-semibold">multi-dimensional mental profile</span>.
-            Emotional scores show stability, while memory performance indicates improving cognitive ability.
-            Subjective inputs reflect a mood of <span className="font-semibold">{latestSubjective?.mood || "unknown"}</span>.
+            <br />
+            Emotion intensity score is <span className="font-semibold"> {latest?.emotion_score?.toFixed(2) || 0}</span>
+            <br />
+            {/* Subjective inputs reflect a mood of <span className="font-semibold">{latestSubjective?.mood || "unknown"}</span>.
             Current mental state ratings suggest mood at <span className="font-semibold">{latestRating?.mood || 0}/10</span>,
             energy at <span className="font-semibold">{latestRating?.energy || 0}/10</span>,
-            and stress at <span className="font-semibold">{latestRating?.stress || 0}/10</span>.
-            Overall condition appears stable with moderate variability.
+            and stress at <span className="font-semibold">{latestRating?.stress || 0}/10</span>. */}
+            {/* Overall condition appears stable with moderate variability. */}
           </p>
         </div>
 
@@ -564,6 +575,60 @@ export default function PatientDetails() {
             </ResponsiveContainer>
           </div>
         </div>
+
+
+        {/* Emotion Trend */}
+        {/* <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold mb-4">Emotion Intensity Trend</h3>
+
+          <ResponsiveContainer width="100%" height={250}>
+            <LineChart data={assessments}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="date" />
+              <YAxis domain={[0, 1]} />
+              <Tooltip />
+              <Line type="monotone" dataKey="emotion_score" stroke="#ef4444" />
+            </LineChart>
+          </ResponsiveContainer>
+        </div> */}
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold mb-4">Latest Recommendations</h3>
+
+          {parseArray(latest?.recommendations).length ? (
+            <ul className="space-y-2 text-sm">
+              {parseArray(latest?.recommendations).map((r, i) => (
+                <li key={i}>• {r}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No recommendations</p>
+          )}
+
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100">
+          <h3 className="font-bold mb-4">Diet Plan</h3>
+
+          {parseArray(latest?.diet).length ? (
+            <ul className="space-y-2 text-sm">
+              {parseArray(latest?.diet).map((d, i) => (
+                <li key={i}>🥗 {d}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>No diet suggestions</p>
+          )}
+        </div>
+
+        {latest?.consult_doctor === 1 && (
+          <div className="bg-red-50 border border-red-200 p-4 rounded-xl">
+            <p className="text-red-700 font-semibold">
+              ⚠️ Immediate doctor consultation recommended
+            </p>
+          </div>
+        )}
+
 
         {/* Cognitive Charts */}
 
