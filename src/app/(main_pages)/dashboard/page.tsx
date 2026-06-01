@@ -39,6 +39,11 @@ import {
 } from "recharts";
 import { useRouter } from "next/navigation";
 
+type Reminder = {
+  medicine_name: string;
+  [key: string]: unknown;
+};
+
 export default function Stats() {
   return (
     <Suspense fallback={<div className="flex items-center justify-center h-screen text-slate-500">Loading dashboard...</div>}>
@@ -108,7 +113,13 @@ function StatsData() {
 
   const router = useRouter();
 
-  const email = typeof window !== "undefined" ? localStorage.getItem("userEmail") : null;
+  const [email, setEmail] = useState<string | null>(null);
+
+useEffect(() => {
+  if (typeof window !== "undefined") {
+    setEmail(localStorage.getItem("userEmail"));
+  }
+}, []);
 
   // ================= TIMER LOGIC =================
   const startSession = () => {
@@ -173,12 +184,11 @@ function StatsData() {
 
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current !== null) clearInterval(intervalRef.current);
-      if (shakeIntervalRef.current !== null) clearInterval(shakeIntervalRef.current);
-    };
-    console.log("AI DATA:", userData);
-  }, []);
+  return () => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    if (shakeIntervalRef.current) clearInterval(shakeIntervalRef.current);
+  };
+}, []);
 
   // FETCH DATA
   useEffect(() => {
@@ -229,23 +239,36 @@ function StatsData() {
   }, [email]);
 
   useEffect(() => {
-    if (!email) return;
+  if (!email) return;
 
-    const interval = setInterval(async () => {
+  const interval = setInterval(async () => {
+    try {
       const res = await fetch(`/api/reminders/check?email=${email}`);
+
+      if (!res.ok) return;
+
       const data = await res.json();
 
       if (data.reminders?.length) {
-        data.reminders.forEach((r: any) => {
-          new Notification("Medicine Reminder 💊", {
-            body: `Take ${r.medicine_name}`,
-          });
+        data.reminders.forEach((r: Reminder) => {
+          if (
+            typeof window !== "undefined" &&
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            new Notification("Medicine Reminder 💊", {
+              body: `Take ${r.medicine_name}`,
+            });
+          }
         });
       }
-    }, 15000); // every 15 sec
+    } catch (err) {
+      console.error(err);
+    }
+  }, 15000);
 
-    return () => clearInterval(interval);
-  }, [email]);
+  return () => clearInterval(interval);
+}, [email]);
 
   const getSleepDayKey = () => {
     const now = new Date();
@@ -435,13 +458,13 @@ function StatsData() {
     return "Your weight is stable. Keep maintaining your routine.";
   };
 
-  useEffect(() => {
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js")
-        .then(reg => console.log("SW registered"))
-        .catch(err => console.log(err));
-    }
-  }, []);
+  // useEffect(() => {
+  //   if ("serviceWorker" in navigator) {
+  //     navigator.serviceWorker.register("/sw.js")
+  //       .then(reg => console.log("SW registered"))
+  //       .catch(err => console.log(err));
+  //   }
+  // }, []);
 
   const subscribeUser = async () => {
     const reg = await navigator.serviceWorker.ready;
@@ -461,30 +484,34 @@ function StatsData() {
   };
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/firebase-messaging-sw.js");
+      navigator.serviceWorker
+        .register("/sw.js")
+        .catch(console.error);
     }
   }, []);
 
-  const enableNotifications = async (email) => {
-    const permission = await Notification.requestPermission();
+  // const enableNotifications = async (email: unknown) => {
+  //   const permission = await Notification.requestPermission();
 
-    if (permission !== "granted") {
-      alert("Enable notifications to receive reminders");
-      return;
-    }
+  //   if (permission !== "granted") {
+  //     alert("Enable notifications to receive reminders");
+  //     return;
+  //   }
 
-    const token = await getToken(messaging, {
-      vapidKey: "YOUR_VAPID_KEY",
-    });
+  //   const token = await getToken(messaging, {
+  //     vapidKey: "YOUR_VAPID_KEY",
+  //   });
 
-    await fetch("/api/save-token", {
-      method: "POST",
-      body: JSON.stringify({ email, token }),
-    });
+  //   await fetch("/api/save-token", {
+  //     method: "POST",
+  //     body: JSON.stringify({ email, token }),
+  //   });
 
-    alert("Notifications enabled ✅");
-  };
+  //   alert("Notifications enabled ✅");
+  // };
 
   if (loading) {
     return (
