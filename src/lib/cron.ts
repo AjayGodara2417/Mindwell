@@ -1,4 +1,4 @@
-import admin from "@/lib/firebaseAdmin";
+// import admin from "@/lib/firebaseAdmin";
 import db from "@/lib/db";
 import moment from "moment";
 
@@ -19,13 +19,13 @@ export function startReminderCron() {
       for (const r of rows) {
         if (!r.fcm_token) continue;
 
-        await admin.messaging().send({
-          token: r.fcm_token,
-          notification: {
-            title: "Medicine Reminder 💊",
-            body: `Take ${r.medicine_name}`,
-          },
-        });
+        // await admin.messaging().send({
+        //   token: r.fcm_token,
+        //   notification: {
+        //     title: "Medicine Reminder 💊",
+        //     body: `Take ${r.medicine_name}`,
+        //   },
+        // });
 
         await db.query(
           "UPDATE reminders SET notified = 1 WHERE id = ?",
