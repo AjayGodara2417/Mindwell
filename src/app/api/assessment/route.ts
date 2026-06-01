@@ -6,34 +6,64 @@ import db from "@/lib/db";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { email, score } = body;
+
+    const {
+      email,
+      score,
+      emotion,
+      emotion_score,
+      final_score,
+      severity,
+      recommendations,
+      diet,
+      consult_doctor
+    } = body;
 
     if (!email || score === undefined) {
       return NextResponse.json(
         { success: false, message: "Email and score are required" },
-        { status: 400 },
+        { status: 400 }
+      );
+    }
+
+    /* 🔥 DAILY LIMIT CHECK */
+    const [existing]: any = await db.query(
+      `SELECT id FROM assessments 
+       WHERE patient_email = ? 
+       AND DATE(created_at) = CURDATE()`,
+      [email]
+    );
+
+    if (existing.length > 0) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: "You have already completed today's assessment.",
+        },
+        { status: 400 }
       );
     }
 
     /* Calculate percentage */
     const percentage = Math.round((score / 75) * 100);
 
-    /* Determine severity */
-    let severity = "";
-
-    if (score <= 15) severity = "Minimal";
-    else if (score <= 30) severity = "Mild";
-    else if (score <= 45) severity = "Moderate";
-    else if (score <= 60) severity = "Severe";
-    else severity = "Very Severe";
-
-    /* Insert into DB */
-
+    /* INSERT INTO DB (🔥 FIXED) */
     const [result]: any = await db.query(
       `INSERT INTO assessments 
-       (patient_email, score, percentage, severity)
-       VALUES (?,?,?,?)`,
-      [email, score, percentage, severity],
+      (patient_email, score, percentage, emotion, emotion_score, final_score, severity, recommendations, diet, consult_doctor)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+        email,
+        score,
+        percentage,
+        emotion || "unknown",
+        emotion_score || 0,
+        final_score || 0,
+        severity || "Unknown",
+        JSON.stringify(recommendations || []),   // ✅ FIX
+        JSON.stringify(diet || []),              // ✅ FIX
+        consult_doctor ? 1 : 0                   // ✅ FIX
+      ]
     );
 
     return NextResponse.json({
@@ -44,14 +74,21 @@ export async function POST(req: NextRequest) {
         score,
         percentage,
         severity,
+        emotion_score,
+        final_score,
+        emotion,
+        recommendations,
+        diet,
+        consult_doctor
       },
     });
+
   } catch (error) {
     console.error("Assessment Save Error:", error);
 
     return NextResponse.json(
       { success: false, message: "Failed to save assessment" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -61,42 +98,56 @@ export async function POST(req: NextRequest) {
 export async function GET(req: NextRequest) {
   try {
     const email = req.nextUrl.searchParams.get("email");
+
     if (!email) {
       return NextResponse.json(
         { success: false, message: "Email required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Get latest 10 (newest first), then reverse to return oldest->newest
     const [rows]: any = await db.query(
       `SELECT 
-  score,
-  percentage,
-  severity,
-  created_at,
-  emotion,
-  emotion_score,
-  final_score,
-  recommendations,
-  diet,
-  consult_doctor
-FROM assessments
-WHERE patient_email = ?
+        score,
+        severity,
+        percentage,
+        emotion_score,
+        final_score,
+        emotion,
+        recommendations,
+        diet,
+        consult_doctor,
+        created_at
+       FROM assessments
+       WHERE patient_email = ?
        ORDER BY created_at DESC
        LIMIT 10`,
-      [email],
+      [email]
     );
 
-    // rows is newest->oldest; reverse to oldest->newest for chart plotting
-    const history = Array.isArray(rows) ? rows.reverse() : [];
+    /* 🔥 PARSE JSON FIELDS */
+    const history = Array.isArray(rows)
+      ? rows.map((row: any) => ({
+          ...row,
+          recommendations: row.recommendations
+            ? JSON.parse(row.recommendations)
+            : [],
+          diet: row.diet ? JSON.parse(row.diet) : [],
+          consult_doctor: !!row.consult_doctor,
+        }))
+      : [];
 
-    return NextResponse.json({ success: true, history });
+    return NextResponse.json({
+      success: true,
+      history,
+    });
+
   } catch (error) {
     console.error("Assessment Fetch Error:", error);
+
     return NextResponse.json(
       { success: false, message: "Failed to fetch assessments" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }

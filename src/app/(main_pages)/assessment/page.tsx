@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { ArrowLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 
 const questions = [
@@ -33,153 +32,390 @@ const questions = [
 ];
 
 const options = [
-  { label: "Never", value: 0, color: "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100" },
-  { label: "Sometimes", value: 1, color: "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" },
-  { label: "Often", value: 2, color: "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100" },
-  { label: "Always", value: 3, color: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100" },
+  { label: "Never", value: 0 },
+  { label: "Sometimes", value: 1 },
+  { label: "Often", value: 2 },
+  { label: "Always", value: 3 },
 ];
 
 export default function AssessmentPage() {
   const router = useRouter();
+
+  /* ---------------- STATES ---------------- */
   const [current, setCurrent] = useState(0);
-  const [answers, setAnswers] = useState<(number | null)[]>(Array(questions.length).fill(null));
+  const [answers, setAnswers] = useState<(number | null)[]>(
+    Array(questions.length).fill(null)
+  );
+  const [emotions, setEmotions] = useState<string[]>([]);
 
-  const [isLocked, setIsLocked] = useState(() => {
-    if (typeof window === "undefined") return false;
-    const lastSubmitted = localStorage.getItem("lastAssessmentDate");
-    const today = new Date().toLocaleDateString("en-CA");
-    return lastSubmitted === today;
-  });
+  const [loading, setLoading] = useState(true);   // 🔥 FIX
+  const [allowed, setAllowed] = useState(false);  // 🔥 FIX
 
-  const progress = Math.round(((current + 1) / questions.length) * 100);
 
+  // ✅ AFTER
+  const [latestEmotionData, setLatestEmotionData] = useState<{
+    emotion: string;
+    confidence: number;
+    condition: string;
+    stress_score: number;
+    emotions: Record<string, number>;
+  } | null>(null);
+
+  // const [emotionReady, setEmotionReady] = useState(false);
+  const [countdown, setCountdown] = useState<number | null>(null);
+
+  const [started, setStarted] = useState(false);
+
+  /* ---------------- REFS ---------------- */
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+
+  /* ---------------- DAILY CHECK (SAFE) ---------------- */
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const email = localStorage.getItem("userEmail");
+        if (!email) {
+          setLoading(false);
+          return;
+        }
+
+        const res = await fetch(`/api/assessment?email=${email}`);
+        const data = await res.json();
+
+        let blockedToday = false;
+
+        if (data.history) {
+          const today = new Date().toDateString();
+
+          blockedToday = data.history.some((item: any) =>
+            new Date(item.created_at).toDateString() === today
+          );
+        }
+
+        if (blockedToday) {
+          alert("⚠️ You already completed today's assessment.");
+          router.push("/dashboard");
+          return;
+        }
+
+        setAllowed(true);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAccess();
+  }, [router]);
+
+  /* ---------------- CAMERA ---------------- */
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      if (videoRef.current) videoRef.current.srcObject = stream;
+      streamRef.current = stream;
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const stopCamera = () => {
+    streamRef.current?.getTracks().forEach((t) => t.stop());
+  };
+
+  const captureFrame = () => {
+    const video = videoRef.current;
+    if (!video) return null;
+
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(video, 0, 0, 640, 480);
+
+    return canvas.toDataURL("image/jpeg", 0.8).split(",")[1];
+  };
+
+
+  const summarizeEmotions = () => {
+    const combined: Record<string, number> = {};
+
+    emotions.forEach((frame: any) => {
+      if (!frame) return;
+
+      Object.entries(frame).forEach(([key, value]: any) => {
+        combined[key] = (combined[key] || 0) + value;
+      });
+    });
+
+    return combined;
+  };
+
+  const getDominantEmotion = () => {
+    const summary = summarizeEmotions();
+    let max = 0;
+    let dominant = "neutral";
+
+    for (let key in summary) {
+      if (summary[key] > max) {
+        max = summary[key];
+        dominant = key;
+      }
+    }
+
+    return dominant;
+  };
+
+
+
+  useEffect(() => {
+    if (started) startCamera();
+    return () => stopCamera();
+  }, [started]);
+
+
+  useEffect(() => {
+    if (!started) return;
+
+    const interval = setInterval(async () => {
+      const frame = captureFrame();
+      if (!frame) return;
+
+      try {
+        const res = await fetch("http://localhost:5000/emotion", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: frame }),
+        });
+
+        const data = await res.json();
+
+        if (data && data.emotions) {
+          setEmotions((prev: any) => [...prev, data.emotions]);
+          setLatestEmotionData(data);
+          // setEmotionReady(true);
+        }
+      } catch (err) {
+        console.error("❌ Emotion fetch error:", err);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [started]);
+
+
+  useEffect(() => {
+    if (countdown === null) return;
+    if (countdown === 0) return;  // questions show automatically
+
+    const timer = setTimeout(() => {
+      setCountdown((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  /* ---------------- ANSWER ---------------- */
   const handleAnswer = async (value: number) => {
     const updated = [...answers];
     updated[current] = value;
     setAnswers(updated);
 
-    // Small delay for visual feedback
     setTimeout(async () => {
       if (current < questions.length - 1) {
         setCurrent((prev) => prev + 1);
-      } else {
-        const totalScore = updated.reduce((sum: number, val) => (sum ?? 0) + (val ?? 0), 0);
-        const percentage = Math.round(((totalScore ?? 0) / 75) * 100);
-        const email = localStorage.getItem("userEmail");
+        return;
+      }
 
-        try {
-          await fetch("/api/assessment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, score: totalScore, percentage }),
-          });
-        } catch (error) {
-          console.error(error);
+      const totalScore = updated.reduce((sum, v) => (sum ?? 0) + (v || 0), 0);
+      const percentage = Math.round(((totalScore ?? 0) / 75) * 100);
+      const email = localStorage.getItem("userEmail");
+
+      stopCamera();
+
+      const emotionSummary = summarizeEmotions();
+
+      const finalEmotionSummary = Object.keys(emotionSummary).length === 0
+        ? { neutral: 1 }
+        : emotionSummary;
+      const dominantEmotion = getDominantEmotion();
+
+      // console.log("Emotion Summary:", emotionSummary);
+      // console.log("Total Score:", totalScore);
+      // console.log("ML Emotion:", latestEmotionData?.emotion);
+
+      let finalData: any = null;
+
+      try {
+        console.log("STEP 1: Sending to ML API");
+        const res = await fetch("http://127.0.0.1:5000/final-predict", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            score: totalScore,
+            emotions: finalEmotionSummary,  // ✅ CHANGED
+            ml_emotion: latestEmotionData?.emotion,
+          }),
+        });
+
+
+        const response = await res.json();
+
+        console.log("STEP 3: ML RESPONSE:", response);
+
+        console.log("Total Score:", totalScore);
+        console.log("Emotion Summary:", emotionSummary);
+        console.log("ML Response:", response);
+        console.log("Final Score from ML:", response?.final_score);
+        console.log("Questionnaire Score from ML:", response?.questionnaire_score);
+
+        if (!response) {
+          console.error("EMPTY ML RESPONSE");
+          return;
         }
 
-        const today = new Date().toLocaleDateString("en-CA");
-        localStorage.setItem("lastAssessmentDate", today);
-        router.push(`/result-dashboard?score=${totalScore}`);
+        localStorage.setItem(
+          "mlResult",
+          JSON.stringify(response)   // 🔥 DIRECTLY STORE RESPONSE
+        );
+
+        finalData = response;
+
+      } catch (err) {
+        console.error(err);
       }
+
+      try {
+        const res = await fetch("/api/assessment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email,
+            score: totalScore,
+            percentage,
+            emotion: finalData?.emotion,  //dominantEmotion,
+            severity: finalData?.severity,
+            final_score: finalData?.final_score,
+            emotion_score: finalData?.confidence || finalData?.emotion_score,
+
+            recommendations: finalData?.recommendations,
+            diet: finalData?.diet,
+            consult_doctor: finalData?.consult_doctor,
+          }),
+        });
+
+        console.log("RAW RESPONSE:", res);
+        console.log("STATUS:", res.status);
+
+        const data = await res.json(); // ✅ read once
+
+        console.log("API RESPONSE:", data);
+
+        if (!res.ok) {
+          alert(data.message);
+          return;
+        }
+      } catch (error) {
+        console.error(error);
+      }
+
+      localStorage.setItem("lastAssessmentDate", new Date().toDateString());
+
+      router.push("/result-dashboard");
     }, 250);
   };
 
-  const prevQuestion = () => {
-    if (current > 0) setCurrent(current - 1);
-  };
+  const progress = Math.round(((current + 1) / questions.length) * 100);
 
-  // 🔒 LOCK SCREEN
-  if (isLocked) {
+  /* ---------------- LOADING UI ---------------- */
+  if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-xl text-center max-w-md border border-slate-100">
-          <div className="w-16 h-16 bg-amber-50 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="text-amber-500" size={32} />
-          </div>
-          <h2 className="text-xl font-bold text-slate-800 mb-2">Assessment Completed</h2>
-          <p className="text-slate-600 mb-4">You have already submitted todays assessment.</p>
-          <div className="bg-slate-50 rounded-lg p-3 text-sm text-slate-500">
-            Please come back tomorrow. The assessment will be available again after midnight.
-          </div>
-          <button onClick={() => router.push('/dashboard')} className="mt-6 text-teal-600 font-medium hover:underline">
-            Return to Dashboard
-          </button>
-        </div>
+      <div className="h-screen flex items-center justify-center text-slate-500">
+        Checking access...
       </div>
     );
   }
 
+  if (!allowed) return null;
+
+  if (!started) {
+    return (
+      <div className="h-screen flex items-center justify-center flex-col gap-6">
+        <h1 className="text-2xl font-bold text-slate-800">Mental Health Assessment</h1>
+        <p className="text-slate-500 text-sm text-center max-w-md">
+          This assessment uses your camera to detect emotions while you answer questions.
+          Please ensure you are in a well-lit area.
+        </p>
+        <button
+          onClick={() => {
+            setStarted(true);
+            setCountdown(5);  // 🔥 start 5 second countdown
+          }}
+          className="px-8 py-4 bg-teal-500 text-white rounded-xl font-semibold hover:bg-teal-600 transition-all"
+        >
+          Start Assessment
+        </button>
+      </div>
+    );
+  }
+
+
+  if (countdown !== null && countdown > 0) {
+    return (
+      <>
+        <video ref={videoRef} autoPlay muted className="hidden" />
+        <div className="h-screen flex items-center justify-center flex-col gap-4">
+          <div className="text-5xl font-bold text-teal-500">{countdown}</div>
+          <p className="text-slate-500 text-sm">Preparing emotion detection...</p>
+        </div>
+      </>
+    );
+  }
+
+  /* ---------------- UI ---------------- */
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 md:p-8">
-      <div className="w-full max-w-2xl space-y-6">
+    <>
+      <video ref={videoRef} autoPlay muted className="hidden" />
 
-        {/* Progress Header */}
-        <div className="flex items-center justify-between text-sm font-medium text-slate-500 mb-2">
-          <span>Question {current + 1} of {questions.length}</span>
-          <span>{progress}% Completed</span>
-        </div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
+        <div className="w-full max-w-2xl">
 
-        {/* Progress Bar */}
-        <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-          <div
-            className="h-full bg-linear-to-r from-teal-500 to-emerald-500 transition-all duration-500 ease-out"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-
-        {/* Question Card */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-10 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-
-          <h2 className="text-2xl font-bold text-slate-800 text-center leading-relaxed">
-            {questions[current].question}
-          </h2>
-
-          {/* Options Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {options.map((option) => {
-              const selected = answers[current] === option.value;
-              return (
-                <button
-                  key={option.label}
-                  onClick={() => handleAnswer(option.value)}
-                  className={`
-                    relative flex items-center justify-between px-6 py-4 rounded-xl border-2 transition-all duration-200 group
-                    ${selected 
-                      ? "border-teal-600 bg-teal-50 ring-1 ring-teal-600" 
-                      : "border-slate-100 bg-white hover:border-teal-200 hover:bg-slate-50"
-                    }
-                  `}
-                >
-                  <span className={`font-semibold ${selected ? "text-teal-900" : "text-slate-700"}`}>
-                    {option.label}
-                  </span>
-                  <div className={`
-                    w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors
-                    ${selected ? "border-teal-600 bg-teal-600" : "border-slate-300 group-hover:border-teal-400"}
-                  `}>
-                    {selected && <CheckCircle2 size={14} className="text-white" />}
-                  </div>
-                </button>
-              );
-            })}
+          <div className="mb-4 flex justify-between text-sm text-slate-500">
+            <span>Question {current + 1} / {questions.length}</span>
+            <span>{progress}%</span>
           </div>
 
-          {/* Footer Navigation */}
-          <div className="flex justify-between items-center pt-4 border-t border-slate-100">
-            <button
-              onClick={prevQuestion}
-              disabled={current === 0}
-              className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-teal-600 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
-            <span className="text-xs text-slate-400 italic">
-              Select an option to continue
-            </span>
+          <div className="w-full h-2 bg-slate-200 rounded-full mb-6">
+            <div
+              className="h-2 bg-teal-500 rounded-full transition-all"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg p-8">
+            <h2 className="text-xl font-semibold text-center text-slate-800 mb-6">
+              {/* {questions[current].question} */}
+              {questions[current]?.question || "Loading question..."}
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {options.map((opt) => (
+                <button
+                  key={opt.label}
+                  onClick={() => handleAnswer(opt.value)}
+                  className="p-4 rounded-xl border text-sm font-medium bg-white hover:border-teal-400"
+                >
+                  {opt.label}
+                </button>
+              ))}
+            </div>
           </div>
 
         </div>
       </div>
-    </div>
+    </>
   );
 }

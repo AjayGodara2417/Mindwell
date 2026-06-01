@@ -14,7 +14,6 @@ import {
   X,
   Play
 } from "lucide-react";
-
 import {
   Assessment,
   SleepEntry,
@@ -26,7 +25,6 @@ import {
   TaskType,
   WeightEntry,
 } from "@/types/dashboard";
-
 import {
   BarChart,
   Bar,
@@ -71,6 +69,42 @@ function StatsData() {
 
   const [weightData, setWeightData] = useState<WeightEntry[]>([]);
   const [weight, setWeight] = useState<string>("");
+
+  const [reminderTime, setReminderTime] = useState("");
+  const [medicineName, setMedicineName] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const requestNotificationPermission = async () => {
+    if (!("Notification" in window)) {
+      showToast("Browser does not support notifications", "error");
+      return;
+    }
+
+    const permission = await Notification.requestPermission();
+
+    if (permission === "granted") {
+      showToast("Notifications enabled ✅");
+    } else {
+      showToast("Permission denied ❌", "error");
+    }
+  };
+
+  const previewNotification = () => {
+    if (Notification.permission !== "granted") {
+      showToast("Enable notifications first", "error");
+      return;
+    }
+
+    new Notification("Medicine Reminder 💊", {
+      body: `Take ${medicineName || "your medicine"}`,
+      icon: "/logo.png",
+    });
+  };
 
   const router = useRouter();
 
@@ -143,7 +177,8 @@ function StatsData() {
       if (intervalRef.current !== null) clearInterval(intervalRef.current);
       if (shakeIntervalRef.current !== null) clearInterval(shakeIntervalRef.current);
     };
- console.log("AI DATA:", userData); }, []);
+    console.log("AI DATA:", userData);
+  }, []);
 
   // FETCH DATA
   useEffect(() => {
@@ -191,6 +226,25 @@ function StatsData() {
       }
     };
     fetchData();
+  }, [email]);
+
+  useEffect(() => {
+    if (!email) return;
+
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/reminders/check?email=${email}`);
+      const data = await res.json();
+
+      if (data.reminders?.length) {
+        data.reminders.forEach((r: any) => {
+          new Notification("Medicine Reminder 💊", {
+            body: `Take ${r.medicine_name}`,
+          });
+        });
+      }
+    }, 15000); // every 15 sec
+
+    return () => clearInterval(interval);
   }, [email]);
 
   const getSleepDayKey = () => {
@@ -381,6 +435,57 @@ function StatsData() {
     return "Your weight is stable. Keep maintaining your routine.";
   };
 
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js")
+        .then(reg => console.log("SW registered"))
+        .catch(err => console.log(err));
+    }
+  }, []);
+
+  const subscribeUser = async () => {
+    const reg = await navigator.serviceWorker.ready;
+
+    const permission = await Notification.requestPermission();
+    if (permission !== "granted") return;
+
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+    });
+
+    await fetch("/api/subscribe", {
+      method: "POST",
+      body: JSON.stringify(sub),
+    });
+  };
+
+  useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/firebase-messaging-sw.js");
+    }
+  }, []);
+
+  const enableNotifications = async (email) => {
+    const permission = await Notification.requestPermission();
+
+    if (permission !== "granted") {
+      alert("Enable notifications to receive reminders");
+      return;
+    }
+
+    const token = await getToken(messaging, {
+      vapidKey: "YOUR_VAPID_KEY",
+    });
+
+    await fetch("/api/save-token", {
+      method: "POST",
+      body: JSON.stringify({ email, token }),
+    });
+
+    alert("Notifications enabled ✅");
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-500">
@@ -405,6 +510,59 @@ function StatsData() {
     weightTrend: getWeightTrend(),
     mood: latest?.mood || "unknown",
     recentScoreTrend: mentalChartData.slice(-5),
+  };
+
+  const saveReminder = async () => {
+    if (!reminderTime || !medicineName) {
+      showToast("Fill all fields", "error");
+      return;
+    }
+
+    try {
+      // User selected local datetime
+      const selectedDate = new Date(reminderTime);
+
+      // ADD 6 HOURS 33 MINUTES
+      selectedDate.setHours(selectedDate.getHours() + 5);
+      selectedDate.setMinutes(selectedDate.getMinutes() + 30);
+
+      // Convert to MySQL DATETIME format
+      const formattedTime = selectedDate
+        .toISOString()
+        .slice(0, 19)
+        .replace("T", " ");
+
+      await fetch("/api/reminders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          reminder_datetime: formattedTime,
+          medicine_name: medicineName,
+        }),
+      });
+
+      showToast("Reminder set successfully ✅");
+
+      setReminderTime("");
+      setMedicineName("");
+    } catch (err) {
+      console.error(err);
+      showToast("Error saving reminder", "error");
+    }
+  };
+
+  const testNotification = () => {
+    if (Notification.permission !== "granted") {
+      showToast("Enable notifications first", "error");
+      return;
+    }
+
+    new Notification("Medicine Reminder 💊", {
+      body: `Take ${medicineName || "your medicine"}`,
+    });
   };
 
   return (
@@ -533,6 +691,69 @@ function StatsData() {
               </div>
             </div>
           </div>
+
+          {/* MEDICINE REMINDER */}
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-100">
+            <div className="flex items-center gap-2 mb-4">
+              <div className="p-2 bg-green-50 rounded-lg text-green-600">
+                💊
+              </div>
+              <h3 className="font-bold text-slate-800">Medicine Reminder</h3>
+            </div>
+
+            <p className="text-xs text-slate-500 mb-3">
+              Set a reminder for your medicine
+            </p>
+
+            <input
+              type="text"
+              placeholder="Medicine name"
+              value={medicineName}
+              onChange={(e) => setMedicineName(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm mb-3"
+            />
+
+            <input
+              type="datetime-local"
+              value={reminderTime}
+              onChange={(e) => setReminderTime(e.target.value)}
+              className="w-full bg-slate-50 border border-slate-200 px-4 py-3 rounded-xl text-sm mb-3"
+            />
+
+            <div className="flex gap-2">
+              <button
+                onClick={saveReminder}
+                className="flex-1 bg-green-600 text-white py-2 rounded-xl text-sm font-bold hover:bg-green-700"
+              >
+                Set Reminder
+              </button>
+
+              <button
+                onClick={previewNotification}
+                className="px-3 bg-slate-200 rounded-xl text-sm"
+              >
+                🔔 Test
+              </button>
+            </div>
+
+            <button
+              onClick={requestNotificationPermission}
+              className="mt-3 w-full text-xs text-slate-500 underline"
+            >
+              Enable Notifications
+            </button>
+          </div>
+
+          {toast && (
+            <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
+              <div
+                className={`px-6 py-3 rounded-xl shadow-lg text-white text-sm font-medium ${toast.type === "success" ? "bg-green-600" : "bg-red-500"
+                  }`}
+              >
+                {toast.message}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* MIDDLE GRID */}
