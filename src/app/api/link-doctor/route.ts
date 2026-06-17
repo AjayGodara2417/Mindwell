@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     // Check doctor exists
     const [doctor] = await db.execute<mysql.RowDataPacket[]>(
       "SELECT * FROM doctors WHERE doctor_id=?",
-      [doctor_id]
+      [doctor_id],
     );
 
     if (doctor.length === 0) {
@@ -31,10 +31,10 @@ export async function POST(req: Request) {
     }
 
     // Update patient
-    await db.execute(
-      "UPDATE patients SET linked_doctor_id=? WHERE email=?",
-      [doctor_id, patient_email]
-    );
+    await db.execute("UPDATE patients SET linked_doctor_id=? WHERE email=?", [
+      doctor_id,
+      patient_email,
+    ]);
 
     return NextResponse.json({ success: true });
   } catch {
