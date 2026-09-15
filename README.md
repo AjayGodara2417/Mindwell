@@ -374,6 +374,6 @@ Backend verifies token
 
 ## 🧑‍💻 **Author**
 
-***Ajay Godara***
+***Ajay Godara || MERN stack developer***
 Full stack web Developer (Next.js + Tailwind + MySQL + MERN stack + React Native)
 [Github](https://github.com/AjayGodara2417/)
